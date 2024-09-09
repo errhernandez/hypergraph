@@ -33,14 +33,19 @@ class NodeConvolution(eqx.Module):
             eqx.nn.Linear(n_hedge_features, n_node_features_out, key2)
 
     def __call__(self,
-            node_input,
-            node_senders,
-            node_receivers, 
-            node_adjacency,
+            node_features: jnp.ndarray,
+            node_senders: jnp.ndarray,,
+            node_receivers: jnp.ndarray,, 
+            node_adjacency: jnp.ndarray,,
+            hedge_features: jnp.ndarray,,
+            hedge2node_senders: jnp.ndarray,,
+            hedge2node_receivers: jnp.ndarray,,
+            scaled_incidences: jnp.ndarray
+        ) -> jnp.ndarray
 
         # first convolve node features
 
-        sender_features = node_input[node_senders]
+        sender_features = node_features[node_senders]
 
         messages = self.node_message(sender_features)
 
@@ -49,6 +54,19 @@ class NodeConvolution(eqx.Module):
         gathered_messages = jax.ops.segment_sum(scaled_messages, receivers)
 
         # now use hedge embeddings to co-embed node embeddings
+
+        hedge_sender_features = hedge_features[hedge2node_senders]
+
+        hedge_messages = self.hedge_scaling(hedge_sender_features)
+
+        scaled_hedge_messages = scaled_incidence * hedge_messages
+
+        gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
+                              hedge2node_receivers)
+
+        output = gathered_scaling * gathered_messages
+
+        return output
 
 class HyperGraphModule(eqx.Module):
 
