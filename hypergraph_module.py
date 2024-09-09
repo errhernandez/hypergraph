@@ -34,13 +34,13 @@ class NodeConvolution(eqx.Module):
 
     def __call__(self,
             node_features: jnp.ndarray,
-            node_senders: jnp.ndarray,,
-            node_receivers: jnp.ndarray,, 
-            node_adjacency: jnp.ndarray,,
-            hedge_features: jnp.ndarray,,
-            hedge2node_senders: jnp.ndarray,,
-            hedge2node_receivers: jnp.ndarray,,
-            scaled_incidences: jnp.ndarray
+            node_senders: jnp.ndarray,
+            node_receivers: jnp.ndarray, 
+            node_adjacency: jnp.ndarray,
+            hedge_features: jnp.ndarray,
+            hedge2node_senders: jnp.ndarray,
+            hedge2node_receivers: jnp.ndarray,
+            scaled_incidence: jnp.ndarray
         ) -> jnp.ndarray
 
         # first convolve node features
@@ -51,7 +51,8 @@ class NodeConvolution(eqx.Module):
 
         scaled_messages = node_adjacency * messages
 
-        gathered_messages = jax.ops.segment_sum(scaled_messages, receivers)
+        gathered_messages = jax.ops.segment_sum(scaled_messages,
+                               node_receivers)
 
         # now use hedge embeddings to co-embed node embeddings
 
@@ -63,6 +64,66 @@ class NodeConvolution(eqx.Module):
 
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
                               hedge2node_receivers)
+
+        output = gathered_scaling * gathered_messages
+
+        return output
+
+class HedgeConvolution(eqx.Module):
+
+    def __init__(self,
+            key: jnp.ndarray,
+            n_hedge_features_in: int,
+            n_node_features: int,
+            n_hedge_features_out: Optional[int] = None
+            ) -> None:
+
+        if n_hedge_features_out is None:
+           n_hedge_features_out = n_hedge_features_in
+
+        # define two linear layers (eventually these may become full MLPs)
+        # one for transforming node features, and one for 
+
+        key1, key2 = jax.random.split(key)
+
+        self.node_message = \
+            eqx.nn.Linear(n_hedge_features_in, n_hedge_features_out, key1)
+
+        self.node_scaling = \
+            eqx.nn.Linear(n_node_features, n_hedge_features_out, key2)
+
+    def __call__(self,
+            hedge_features: jnp.ndarray,
+            hedge_senders: jnp.ndarray,
+            hedge_receivers: jnp.ndarray, 
+            hedge_adjacency: jnp.ndarray,
+            node_features: jnp.ndarray,
+            node2hedge_senders: jnp.ndarray,
+            node2hedge_receivers: jnp.ndarray,
+            scaled_incidence_transpose: jnp.ndarray
+        ) -> jnp.ndarray
+
+        # first convolve hedge features
+
+        sender_features = hedge_features[hedge_senders]
+
+        messages = self.node_message(sender_features)
+
+        scaled_messages = hedge_adjacency * messages
+
+        gathered_messages = jax.ops.segment_sum(scaled_messages,
+                               hedge_receivers)
+
+        # now use node embeddings to co-embed node embeddings
+
+        node_sender_features = node_features[node2hedge_senders]
+
+        node_messages = self.hedge_scaling(node_sender_features)
+
+        scaled_node_messages = scaled_incidence_transpose * node_messages
+
+        gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
+                              node2hedge_receivers)
 
         output = gathered_scaling * gathered_messages
 
