@@ -131,7 +131,13 @@ class HedgeConvolution(eqx.Module):
 
 class HyperGraphModule(eqx.Module):
 
-    def __init__(self, n_node_in, n_hedge_in, n_node_out, n_hedge_out, key) -> None:
+    def __init__(self,
+            key: jnp.ndarray,
+            n_node_in: int,
+            n_hedge_in: int,
+            n_node_out: Optional[int] = None,
+            n_hedge_out: Optional[int] = None
+        ) -> None:
         r"""
 
         Args:
@@ -143,8 +149,68 @@ class HyperGraphModule(eqx.Module):
 
         """
 
-        self.linearnn
+        key_nodes, key_hedges = jax.random.split(key)
 
+        if n_node_out is None: n_node_out = n_node_in
+        if n_hedge_out is None: n_hedge_out = n_hedge_in
 
-    def __call__(self, hgraph: HyperGraph)
+        self.NodeConv = NodeConvolution(
+            key_nodes,
+            n_node_in,
+            n_hedge_in,
+            n_node_out
+        )
+
+        self.HedgeConv = HedgeConvolution(
+            key_hedges,
+            n_hedge_in,
+            n_node_out,
+            n_hedge_out
+        ) 
+
+    def __call__(self,
+            node_features,
+            node_senders,
+            node_receivers,
+            node_adjacency, 
+            node2hedge_senders,
+            node2hedge_receivers,
+            hedge_features,
+            hedge_senders,
+            hedge_receivers,
+            hedge_adjacency,
+            hedge2node_senders,
+            hedge2node_receivers
+            scaled_incidence,
+            scaled_incidence_transpose
+        )    
+        r""" """
+
+        # first convolve nodes
+
+        new_node_features = self.NodeConv(
+            node_features,
+            node_senders,
+            node_receivers, 
+            node_adjacency,
+            hedge_features,
+            hedge2node_senders,
+            hedge2node_receivers,
+            scaled_incidence
+        )
+
+        # then convolve hedges
+ 
+        new_hedge_features = self.HedgeConv(
+            hedge_features,
+            hedge_senders,
+            hedge_receivers, 
+            hedge_adjacency,
+            node_features,
+            node2hedge_senders,
+            node2hedge_receivers,
+            scaled_incidence_transpose
+        )
+
+        return new_node_features, new_hedge_features
 
