@@ -1,5 +1,5 @@
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import jax.numpy as jnp
 from scipy.sparse import csr_array
@@ -149,3 +149,23 @@ class HyperGraph:
         self.hedge2node_receivers = jnp.array(incidence[1,:])
         self.hedge2node_senders = jnp.array(incidence[0,:])
 
+    def data_dict(self) -> Dict[str, jnp.ndarray]:
+        """ Returns a dictionary with the hypergraph's data """
+
+        data = {}
+
+        data['node_convolution'] = self.node_convolution
+        data['node_receivers'] = self.node_receivers
+        data['node_senders'] = self.node_senders
+        data['node2hedge_convolution'] = self.node2hedge_convolution
+        data['node2hedge_receivers'] = self.node2hedge_receivers
+        data['node2hedge_senders'] = self.node2hedge_senders
+
+        data['hedge_convolution'] = self.hedge_convolution
+        data['hedge_receivers'] = self.hedge_receivers
+        data['hedge_senders'] = self.hedge_senders
+        data['hedge2node_convolution'] = self.hedge2node_convolution
+        data['hedge2node_receivers'] = self.hedge2node_receivers
+        data['hedge2node_senders'] = self.hedge2node_senders
+
+        return data 

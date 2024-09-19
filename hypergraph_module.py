@@ -1,5 +1,5 @@
 
-from typing import Optional
+from typing import Dict, Optional
 
 import jax
 import jax.numpy as jnp
@@ -22,7 +22,8 @@ class NodeConvolution(eqx.Module):
         if n_node_features_out is None: n_node_features_out = n_node_features_in
 
         # define two linear layers (eventually these may become full MLPs)
-        # one for transforming node features, and one for 
+        # one for transforming node features, and one for obtaining
+        # hedge scaling  
 
         key1, key2 = jax.random.split(key)
 
@@ -34,14 +35,17 @@ class NodeConvolution(eqx.Module):
 
     def __call__(self,
             node_features: jnp.ndarray,
-            node_senders: jnp.ndarray,
-            node_receivers: jnp.ndarray, 
-            node_adjacency: jnp.ndarray,
             hedge_features: jnp.ndarray,
-            hedge2node_senders: jnp.ndarray,
-            hedge2node_receivers: jnp.ndarray,
-            scaled_incidence: jnp.ndarray
+            hgraph_data: Dict[str, jnp.ndarray]
         ) -> jnp.ndarray
+
+        node_senders = hgraph_data['node_senders']
+        node_receivers = hgraph_data['node_receivers']
+        node_convolution = hgraph_data['node_convolution']
+        
+        hedge2node_senders = hgraph_data['hedge2node_senders']
+        hedge2node_receivers = hgraph_data['hedge2node_receivers']
+        hedge2node_convolution = hgraph_data['hedge2node_convolution']
 
         # first convolve node features
 
@@ -49,7 +53,7 @@ class NodeConvolution(eqx.Module):
 
         messages = self.node_message(sender_features)
 
-        scaled_messages = node_adjacency * messages
+        scaled_messages = node_convolution * messages
 
         gathered_messages = jax.ops.segment_sum(scaled_messages,
                                node_receivers)
@@ -60,7 +64,7 @@ class NodeConvolution(eqx.Module):
 
         hedge_messages = self.hedge_scaling(hedge_sender_features)
 
-        scaled_hedge_messages = scaled_incidence * hedge_messages
+        scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
                               hedge2node_receivers)
@@ -86,28 +90,31 @@ class HedgeConvolution(eqx.Module):
 
         key1, key2 = jax.random.split(key)
 
-        self.node_message = \
+        self.hedge_message = \
             eqx.nn.Linear(n_hedge_features_in, n_hedge_features_out, key1)
 
         self.node_scaling = \
             eqx.nn.Linear(n_node_features, n_hedge_features_out, key2)
 
     def __call__(self,
-            hedge_features: jnp.ndarray,
-            hedge_senders: jnp.ndarray,
-            hedge_receivers: jnp.ndarray, 
-            hedge_adjacency: jnp.ndarray,
             node_features: jnp.ndarray,
-            node2hedge_senders: jnp.ndarray,
-            node2hedge_receivers: jnp.ndarray,
-            scaled_incidence_transpose: jnp.ndarray
+            hedge_features: jnp.ndarray,
+            hgraph_data: Dict[str, jnp.ndarray]   
         ) -> jnp.ndarray
+
+        hedge_senders = hgraph_data['hedge_senders']
+        hedge_receivers = hgraph_data['hedge_receivers']
+        hedge_adjacency = hgraph_data['hedge_convolution']
+
+        node2hedge_senders = hgraph_data['node2hedge_senders']
+        node2hedge_receivers = hgraph_data['node2hedge_receivers']
+        node2hedge_convolution = hgraph_data['node2hedge_convolution']
 
         # first convolve hedge features
 
         sender_features = hedge_features[hedge_senders]
 
-        messages = self.node_message(sender_features)
+        messages = self.hedge_message(sender_features)
 
         scaled_messages = hedge_adjacency * messages
 
@@ -118,9 +125,9 @@ class HedgeConvolution(eqx.Module):
 
         node_sender_features = node_features[node2hedge_senders]
 
-        node_messages = self.hedge_scaling(node_sender_features)
+        node_messages = self.node_scaling(node_sender_features)
 
-        scaled_node_messages = scaled_incidence_transpose * node_messages
+        scaled_node_messages = node2hedge_convolution * node_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
                               node2hedge_receivers)
@@ -169,20 +176,9 @@ class HyperGraphModule(eqx.Module):
         ) 
 
     def __call__(self,
-            node_features,
-            node_senders,
-            node_receivers,
-            node_adjacency, 
-            node2hedge_senders,
-            node2hedge_receivers,
-            hedge_features,
-            hedge_senders,
-            hedge_receivers,
-            hedge_adjacency,
-            hedge2node_senders,
-            hedge2node_receivers
-            scaled_incidence,
-            scaled_incidence_transpose
+            node_features: jnp.ndarray,
+            hedge_features: jnp.ndarray,
+            hgraph_data: Dict[str, jnp.ndarray]
         )    
         r""" """
 
@@ -190,26 +186,16 @@ class HyperGraphModule(eqx.Module):
 
         new_node_features = self.NodeConv(
             node_features,
-            node_senders,
-            node_receivers, 
-            node_adjacency,
             hedge_features,
-            hedge2node_senders,
-            hedge2node_receivers,
-            scaled_incidence
+            hgraph_data
         )
 
         # then convolve hedges
  
         new_hedge_features = self.HedgeConv(
-            hedge_features,
-            hedge_senders,
-            hedge_receivers, 
-            hedge_adjacency,
             node_features,
-            node2hedge_senders,
-            node2hedge_receivers,
-            scaled_incidence_transpose
+            hedge_features,
+            hgraph_data
         )
 
         return new_node_features, new_hedge_features
