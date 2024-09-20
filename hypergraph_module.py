@@ -1,5 +1,5 @@
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -11,6 +11,9 @@ from hypergraph import HyperGraph
 # these will then become part of the HyperGraphModule model
 
 class NodeConvolution(eqx.Module):
+
+    node_message: eqx.nn.Linear
+    hedge_scaling: eqx.nn.Linear
 
     def __init__(self,
             key: jnp.ndarray,
@@ -28,16 +31,20 @@ class NodeConvolution(eqx.Module):
         key1, key2 = jax.random.split(key)
 
         self.node_message = \
-            eqx.nn.Linear(n_node_features_in, n_node_features_out, key1)
+            eqx.nn.Linear(n_node_features_in, n_node_features_out, key=key1)
+
+        # self.node_message = jax.vmap(node_lin)
 
         self.hedge_scaling = \
-            eqx.nn.Linear(n_hedge_features, n_node_features_out, key2)
+            eqx.nn.Linear(n_hedge_features, n_node_features_out, key=key2)
+
+        # self.hedge_scaling = jax.vmap(hedge_lin)
 
     def __call__(self,
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]
-        ) -> jnp.ndarray
+        ) -> jnp.ndarray:
 
         node_senders = hgraph_data['node_senders']
         node_receivers = hgraph_data['node_receivers']
@@ -51,7 +58,7 @@ class NodeConvolution(eqx.Module):
 
         sender_features = node_features[node_senders]
 
-        messages = self.node_message(sender_features)
+        messages = jax.vmap(self.node_message)(sender_features)
 
         scaled_messages = node_convolution * messages
 
@@ -62,7 +69,7 @@ class NodeConvolution(eqx.Module):
 
         hedge_sender_features = hedge_features[hedge2node_senders]
 
-        hedge_messages = self.hedge_scaling(hedge_sender_features)
+        hedge_messages = jax.vmap(self.hedge_scaling)(hedge_sender_features)
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
@@ -74,6 +81,9 @@ class NodeConvolution(eqx.Module):
         return output
 
 class HedgeConvolution(eqx.Module):
+
+    hedge_message: eqx.nn.Linear
+    node_scaling: eqx.nn.Linear
 
     def __init__(self,
             key: jnp.ndarray,
@@ -91,16 +101,16 @@ class HedgeConvolution(eqx.Module):
         key1, key2 = jax.random.split(key)
 
         self.hedge_message = \
-            eqx.nn.Linear(n_hedge_features_in, n_hedge_features_out, key1)
+            eqx.nn.Linear(n_hedge_features_in, n_hedge_features_out, key=key1)
 
         self.node_scaling = \
-            eqx.nn.Linear(n_node_features, n_hedge_features_out, key2)
+            eqx.nn.Linear(n_node_features, n_hedge_features_out, key=key2)
 
     def __call__(self,
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]   
-        ) -> jnp.ndarray
+        ) -> jnp.ndarray:
 
         hedge_senders = hgraph_data['hedge_senders']
         hedge_receivers = hgraph_data['hedge_receivers']
@@ -114,7 +124,7 @@ class HedgeConvolution(eqx.Module):
 
         sender_features = hedge_features[hedge_senders]
 
-        messages = self.hedge_message(sender_features)
+        messages = jax.vmap(self.hedge_message)(sender_features)
 
         scaled_messages = hedge_adjacency * messages
 
@@ -125,7 +135,7 @@ class HedgeConvolution(eqx.Module):
 
         node_sender_features = node_features[node2hedge_senders]
 
-        node_messages = self.node_scaling(node_sender_features)
+        node_messages = jax.vmap(self.node_scaling)(node_sender_features)
 
         scaled_node_messages = node2hedge_convolution * node_messages
 
@@ -137,6 +147,9 @@ class HedgeConvolution(eqx.Module):
         return output
 
 class HyperGraphModule(eqx.Module):
+
+    NodeConv: NodeConvolution
+    HedgeConv: HedgeConvolution
 
     def __init__(self,
             key: jnp.ndarray,
@@ -179,7 +192,7 @@ class HyperGraphModule(eqx.Module):
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]
-        )    
+        ) -> Tuple[jnp.ndarray, jnp.ndarray]: 
         r""" """
 
         # first convolve nodes
@@ -193,7 +206,7 @@ class HyperGraphModule(eqx.Module):
         # then convolve hedges
  
         new_hedge_features = self.HedgeConv(
-            node_features,
+            new_node_features,
             hedge_features,
             hgraph_data
         )
