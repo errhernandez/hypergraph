@@ -130,7 +130,7 @@ class HyperGraph:
         # the following deals with hedge scaling of nodes and vice versa
 
         self.node2hedge_convolution = jnp.expand_dims(Z.data, axis=1)
-        self.hedge2node_convolution = jnp.expand_dims((Z.T).data, axis=1)
+        self.hedge2node_convolution = jnp.expand_dims(Zt.data, axis=1)
 
         recv_n2h = []
         send_n2h = []
