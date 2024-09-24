@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from scipy.sparse import csr_array
 
 class HyperGraph:
-    r""" Defines a class to represent a hyper-graph"""
+    r"""Defines a class to represent a hyper-graph"""
 
     def __init__(
         self,
@@ -16,6 +16,26 @@ class HyperGraph:
         targets: Optional[jnp.ndarray] = None,
         **kwargs,
     ) -> None:
+
+        r"""
+        Args:
+           incidence (jnp.array[int]): incidence array, in coord format
+           node_features (jnp.ndarray[float32]): node feature vectors (one per node)
+           hedge_features (jnp.ndarray[float32]): hedge feature vectors (one per hedge)
+           weights (jnp.ndarray[float32]): weight of incidence of hedges on nodes.
+           targets: fitting target array
+
+        Shapes:
+           -**inputs:**
+           incidence [2,:] where incidence[0,:] lists hedges, and incidence[1,:] lists 
+             nodes; e.g. if hedge nh incides on node i, there will be some index m such
+             that incidence[0,m] = nh, incidence[1,m] = i. If there is a weight for this 
+             incidence, the corresponding weights[m] will give this value.
+           node_features [:,n_node_features]
+           hedge_features [:,n_hedge_features]
+           weights if given, same dimension as second dimension in incidence. 
+
+        """
 
         self.node_features = node_features
         self.hedge_features = hedge_features

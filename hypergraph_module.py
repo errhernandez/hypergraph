@@ -12,6 +12,14 @@ from hypergraph import HyperGraph
 
 class NodeConvolution(eqx.Module):
 
+    r"""
+    This module takes care of node convolution in a hypergraph. In essence, a node receives
+    messages from its neighbour nodes (including itself) that are obtained from their 
+    respective feature vectors filtered through a linear layer (self.node_message) and added up. 
+    The result is then Hadamard-scaled by a vector resulting from the features of all edges 
+    connected to the node, after filtering them through a second linear layer (self.hedge_scaling). 
+    """
+
     node_message: eqx.nn.Linear
     hedge_scaling: eqx.nn.Linear
 
@@ -21,6 +29,16 @@ class NodeConvolution(eqx.Module):
             n_hedge_features: int,
             n_node_features_out: Optional[int] = None
             ) -> None:
+
+        r"""
+        Args:
+           key (jax.random.PRNGKey): random key for initialisation purposes.
+           n_node_features_in (int): input node feature vector dimension.
+           n_hedge_features (int): hedge feature vector dimension.
+           n_node_features_out (int, optional): output node feature vector dimension;
+             if not given assumed to be same as n_node_features_in
+
+        """
 
         if n_node_features_out is None: n_node_features_out = n_node_features_in
 
@@ -45,6 +63,22 @@ class NodeConvolution(eqx.Module):
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]
         ) -> jnp.ndarray:
+
+        r"""
+        Args:
+           node_features: array of input node features
+           hedge_features: array of hedge_feature vectors
+           hgraph_data: a pytree dictionary containing HyperGraph index arrays
+
+        Shapes:
+           -**inputs:**
+           node_features [:, n_node_features_in], first dimension runs over nodes
+           hedge_features [:, n_hedge_features], first dimension runs over hedges
+
+           -**outputs:**
+           output_node_features [:, n_node_features_out]
+
+        """
 
         node_senders = hgraph_data['node_senders']
         node_receivers = hgraph_data['node_receivers']
@@ -82,6 +116,15 @@ class NodeConvolution(eqx.Module):
 
 class HedgeConvolution(eqx.Module):
 
+    r"""
+    This module takes care of hedge convolution in a hypergraph. It is a mirror image of
+    NodeConvolution above, but for hedges instead of nodes. In essence, an hedge receives
+    messages from its neighbouring hedges (including itself) that are obtained from their 
+    respective feature vectors filtered through a linear layer (self.hedge_message) and added up. 
+    The result is then Hadamard-scaled by a vector resulting from the features of all nodes 
+    connected to the hedge, after filtering them through a second linear layer (self.node_scaling). 
+    """
+
     hedge_message: eqx.nn.Linear
     node_scaling: eqx.nn.Linear
 
@@ -91,6 +134,16 @@ class HedgeConvolution(eqx.Module):
             n_node_features: int,
             n_hedge_features_out: Optional[int] = None
             ) -> None:
+
+        r"""
+        Args:
+           key (jax.random.PRNGKey): random key for initialisation purposes.
+           n_hedges_features_in (int): input hedge feature vector dimension.
+           n_node_features (int): node feature vector dimension.
+           n_hedge_features_out (int, optional): output hedge feature vector dimension;
+             if not given assumed to be same as n_hedge_features_in 
+
+        """
 
         if n_hedge_features_out is None:
            n_hedge_features_out = n_hedge_features_in
@@ -111,6 +164,22 @@ class HedgeConvolution(eqx.Module):
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]   
         ) -> jnp.ndarray:
+
+        r"""
+        Args:
+           node_features: array of input node features
+           hedge_features: array of hedge_feature vectors
+           hgraph_data: a pytree dictionary containing HyperGraph index arrays
+
+        Shapes:
+           -**inputs:**
+           node_features [:, n_node_features], first dimension runs over nodes
+           hedge_features [:, n_hedge_features_in], first dimension runs over hedges
+
+           -**outputs:**
+           output_hedge_features [:, n_hedge_features_out]
+
+        """
 
         hedge_senders = hgraph_data['hedge_senders']
         hedge_receivers = hgraph_data['hedge_receivers']
@@ -148,6 +217,17 @@ class HedgeConvolution(eqx.Module):
 
 class HyperGraphModule(eqx.Module):
 
+    r"""
+    This module represents a layer of HyperGraph node-hedge combined convolution, in 
+    which first nodes are convoluted with themselves with a weight factor depending on
+    their incident hedged (see NodeConvolution above for details); subsequently hedges 
+    are themselves convoluted with neighbouring hedges, and weighted by the just updated
+    node features (see HedgeConvolution for details). Node convolution is implemented
+    in module NodeConvolution, and hedge convolution in module HedgeConvolution, both 
+    given above. 
+
+    """
+
     NodeConv: NodeConvolution
     HedgeConv: HedgeConvolution
 
@@ -156,23 +236,32 @@ class HyperGraphModule(eqx.Module):
             n_node_in: int,
             n_hedge_in: int,
             n_node_out: Optional[int] = None,
-            n_hedge_out: Optional[int] = None
+            n_hedge_out: Optional[int] = None,
+            activation: Optional = None
         ) -> None:
-        r"""
 
+        r"""
         Args:
+           key (jax random key: initialization key
            n_node_in (int): input node features size
            n_hedge_in (int): input hedge features size
            n_node_out (int): output node embeddings size
            n_hedge_out (int): output hedge embeddings size
-           key (jax random key: initialization key
-
+           activation: element-wise activation function, default = jnp.tanh
         """
 
         key_nodes, key_hedges = jax.random.split(key)
 
         if n_node_out is None: n_node_out = n_node_in
         if n_hedge_out is None: n_hedge_out = n_hedge_in
+
+        # if activation is None:
+        #  setattr( self, activation, (jnp.tanh()) )
+        # else:
+        #   setattr( self, activation, activation )
+        # 
+        # must find out how to pass optional activation function!
+        # for the moment this is hard-coded as jnp.tanh()
 
         self.NodeConv = NodeConvolution(
             key_nodes,
@@ -193,23 +282,46 @@ class HyperGraphModule(eqx.Module):
             hedge_features: jnp.ndarray,
             hgraph_data: Dict[str, jnp.ndarray]
         ) -> Tuple[jnp.ndarray, jnp.ndarray]: 
-        r""" """
+
+        r"""
+        Args:
+           node_features (jnp.ndarray): input node features
+           hedge_features (jnp.ndarray): input hedge features
+           hgraph_data (Dict[str, jnp.ndarray]): pytree dictionary with hypergraph
+             information indices
+
+        Shapes:
+           -**inputs:**
+           node_features [:, n_node_features_in], first dimension runs over
+             nodes in hypergraph (batch)
+           hedge_features [:, n_hedge_features_in], first dimension runs over
+             hedges in hypergraph (batch)
+
+           -**outputs:**
+           Tuple[out_node_features[:, n_node_features_out],
+                 out_hedge_features[:, n_hedge_features_out]]
+
+        """
 
         # first convolve nodes
 
-        new_node_features = self.NodeConv(
+        c_node_features = self.NodeConv(
             node_features,
             hedge_features,
             hgraph_data
         )
 
+        new_node_features = jnp.tanh(c_node_features)
+
         # then convolve hedges
  
-        new_hedge_features = self.HedgeConv(
+        c_hedge_features = self.HedgeConv(
             new_node_features,
             hedge_features,
             hgraph_data
         )
+
+        new_hedge_features = jnp.tanh(c_hedge_features)
 
         return new_node_features, new_hedge_features
 
