@@ -12,6 +12,7 @@ class HyperGraph:
         incidence: jnp.ndarray,
         node_features: Optional[jnp.ndarray] = None,
         hedge_features: Optional[jnp.ndarray] = None,
+        hedge_properties: Optional[jnp.ndarray] = None,
         weights: Optional[jnp.ndarray] = None,
         targets: Optional[jnp.ndarray] = None,
         **kwargs,
@@ -22,6 +23,12 @@ class HyperGraph:
            incidence (jnp.array[int]): incidence array, in coord format
            node_features (jnp.ndarray[float32]): node feature vectors (one per node)
            hedge_features (jnp.ndarray[float32]): hedge feature vectors (one per hedge)
+           hedge_proerties (jnp.ndarray[float32]): hedge properties; these are different
+             from hedge_features in that hedge_features are processed through convolution, 
+             while hedge_properties are not, although they are used in final predictions
+             (for example, we do not want electron spin to change during convolution, 
+              so we make it a property; electron position or width are features, because
+              we do want them to evolve according to convolution)
            weights (jnp.ndarray[float32]): weight of incidence of hedges on nodes.
            targets: fitting target array
 
@@ -39,6 +46,7 @@ class HyperGraph:
 
         self.node_features = node_features
         self.hedge_features = hedge_features
+        self.hedge_properties = hedge_properties
         self.incidence = incidence
         self.weights = weights
         self.targets = targets
