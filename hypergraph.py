@@ -9,7 +9,7 @@ class HyperGraph:
 
     def __init__(
         self,
-        incidence: jnp.ndarray,
+        incidence: jnp.ndarray = None,
         node_features: Optional[jnp.ndarray] = None,
         hedge_features: Optional[jnp.ndarray] = None,
         hedge_properties: Optional[jnp.ndarray] = None,
@@ -20,7 +20,8 @@ class HyperGraph:
 
         r"""
         Args:
-           incidence (jnp.array[int]): incidence array, in coord format
+           incidence (jnp.array[int]): incidence array, in coord format; if set to None, 
+           an empty instance is created, to be filled in by the caller
            node_features (jnp.ndarray[float32]): node feature vectors (one per node)
            hedge_features (jnp.ndarray[float32]): hedge feature vectors (one per hedge)
            hedge_proerties (jnp.ndarray[float32]): hedge properties; these are different
@@ -43,6 +44,8 @@ class HyperGraph:
            weights if given, same dimension as second dimension in incidence. 
 
         """
+
+        if incidence is None: return
 
         self.node_features = node_features
         self.hedge_features = hedge_features
