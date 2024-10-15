@@ -1,12 +1,33 @@
 
 import re
-from typing import List, Tuple
 
 import numpy as np
 
+units = {}
+units['A'] = 'GHz'
+units['B'] = 'GHz'
+units['C'] = 'GHz'
+units['mu'] = 'D'
+units['alpha'] = 'Bohr^3'
+units['ehomo'] = 'Ha'
+units['elumo'] = 'Ha'
+units['egap'] = 'Ha'
+units['R2'] = 'Bohr^2'
+units['zpve'] = 'Ha'
+units['U0'] = 'Ha'
+units['U'] = 'Ha'
+units['H'] = 'Ha'
+units['G'] = 'Ha'
+units['Cv'] = 'cal/mol/K'
+units['freq'] = 'cm-1'
+
+atom_ref = dict(
+   H=-0.500273, C=-37.846772, N=-54.583861, O=-75.064579, F=-99.718730
+)
+
 def read_QM9_structure(
        file_name: str 
-    ) -> Tuple[int, int, List[str], float, float]:
+    ) -> tuple[int, int, list[str], float, dict[str, float]]:
 
 
     """
@@ -21,12 +42,12 @@ def read_QM9_structure(
 
     :return: molecule_id (int): integer identifying the molecule number
         in the database n_atoms (int): number of atoms in the molecule
-        species (List[str]): the species of each atom (len = n_atoms)
+        species (list[str]): the species of each atom (len = n_atoms)
         coordinates (np.array(float)[n_atoms,3]): atomic positions
         properties (np.array(float)[:]): molecular properties, see
         database docummentation charge (np.array(float)[n_atoms]):
         Mulliken charges of atoms
-    :rtype: Tuple[int, int, List[str], float, float, float]
+    :rtype: tuple[int, int, list[str], float, float, float]
 
     """
 
@@ -75,19 +96,34 @@ def read_QM9_structure(
 
     frequencies = np.array(lines[n_atoms + 2].split(), dtype=float)
 
-    # we pack all the molecular data into a single array of properties
+    # rather than returning a vector of properties, we will return 
+    # a dictionary for ease of use
 
-    properties = np.expand_dims(
-       np.concatenate((molecular_data, frequencies)), axis=0
-    )
+    prop_dict = {}
+    prop_dict['A'] = molecular_data[0]
+    prop_dict['B'] = molecular_data[1]
+    prop_dict['C'] = molecular_data[2]
+    prop_dict['mu'] = molecular_data[3]
+    prop_dict['alpha'] = molecular_data[4]
+    prop_dict['ehomo'] = molecular_data[5]
+    prop_dict['elumo'] = molecular_data[6]
+    prop_dict['egap'] = molecular_data[7]
+    prop_dict['R2'] = molecular_data[8]
+    prop_dict['zpve'] = molecular_data[9]
+    prop_dict['U0'] = molecular_data[10]
+    prop_dict['U'] = molecular_data[11]
+    prop_dict['H'] = molecular_data[12]
+    prop_dict['G'] = molecular_data[13]
+    prop_dict['Cv'] = molecular_data[14]
+    prop_dict['freq'] = frequencies
 
-    return molecule_id, n_atoms, species, coordinates, properties
+    return molecule_id, n_atoms, species, coordinates, prop_dict
 
 def write_QM9_structure(
         file_name: str,
         molecule_id: int, 
         n_atoms: int,
-        species: List[str],
+        species: list[str],
         coordinates: float,
         properties: float 
     ) -> None:

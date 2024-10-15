@@ -1,13 +1,11 @@
 
-from typing import List
-
 import jax.numpy as jnp
 import numpy as np
 from scipy.sparse import csr_array
 
 from hypergraph import HyperGraph
 
-def hypergraph_batch(hypergraphs: List[HyperGraph]) -> HyperGraph:
+def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
 
     r""" 
 

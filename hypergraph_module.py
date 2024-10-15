@@ -1,5 +1,5 @@
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -74,14 +74,14 @@ class HyperGraphModule(nnx.Module):
     def __call__(self,
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
-            hgraph_data: Dict[str, jnp.ndarray]
-        ) -> Tuple[jnp.ndarray, jnp.ndarray]: 
+            hgraph_data: dict[str, jnp.ndarray]
+        ) -> tuple[jnp.ndarray, jnp.ndarray]: 
 
         r"""
         Args:
            node_features (jnp.ndarray): input node features
            hedge_features (jnp.ndarray): input hedge features
-           hgraph_data (Dict[str, jnp.ndarray]): pytree dictionary with hypergraph
+           hgraph_data (dict[str, jnp.ndarray]): pytree dictionary with hypergraph
              information indices
 
         Shapes:
@@ -92,7 +92,7 @@ class HyperGraphModule(nnx.Module):
              hedges in hypergraph (batch)
 
            -**outputs:**
-           Tuple[out_node_features[:, n_node_features_out],
+           tuple[out_node_features[:, n_node_features_out],
                  out_hedge_features[:, n_hedge_features_out]]
 
         """

@@ -1,5 +1,5 @@
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -66,7 +66,7 @@ class NodeConvolution(nnx.Module):
     def __call__(self,
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
-            hgraph_data: Dict[str, jnp.ndarray]
+            hgraph_data: dict[str, jnp.ndarray]
         ) -> jnp.ndarray:
 
         r"""
@@ -171,7 +171,7 @@ class HedgeConvolution(nnx.Module):
     def __call__(self,
             node_features: jnp.ndarray,
             hedge_features: jnp.ndarray,
-            hgraph_data: Dict[str, jnp.ndarray]   
+            hgraph_data: dict[str, jnp.ndarray]   
         ) -> jnp.ndarray:
 
         r"""
