@@ -1,0 +1,42 @@
+
+# a sample yaml input file for script hypergraph_maker.py
+
+# This input file specifies how hyper-graph objects are to be constructed; it reads information
+# for defining node (atom) features and edge features.
+
+debug: True
+
+# it is possible to avoid generating the graph objects (usually for debug purposes);
+# in that case, uncomment the following line.
+generate_graphs: True
+
+# address where to find the data-base files, and where to put the graph files once created
+DataBaseDirectory: '../Databases/QM9Small/'
+TargetDirectory: '../Databases/QM9ERHGraphDataBase'
+
+# the file extensions, both for the input and for the graph files
+
+InputFileExtension: '.xyz'
+OutputFileExtension: '.pkl'
+
+nodeFeatures:   # the following are a list of mendeleev recognised keywords
+   - 'atomic_number'
+   - 'covalent_radius'
+   - 'vdw_radius'
+   - 'electron_affinity'
+   - 'en_pauling'
+#  - 'nvalence'
+#  - 'group'
+
+# other possible keywords are
+#  - 'zeff'               # effective nuclear charge
+#  - 'softness'           # absolute softness (eV^-1)
+#  - 'hardness'           # absolute hardness (eV)
+#  - 'c6'                 # dispersion coefficient (Hartree/Bohr^6)
+#  etc
+
+edgeFeatures: 10   # the following specify hyper-edge features
+
+graphType: 'covalentQM9'
+
+

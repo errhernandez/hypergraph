@@ -117,7 +117,7 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
     batch_hgraph.node_convolution = jnp.concatenate(node_convolution)
     batch_hgraph.node2hedge_convolution = jnp.concatenate(node2hedge_convolution)
     batch_hgraph.weights = jnp.concatenate(weights)
-    batch_hgraph.targets = jnp.concatenate(targets)
+    # batch_hgraph.targets = jnp.concatenate(targets) # targets are now a dict
 
     batch_hgraph.node_receivers = jnp.array(b_node_receivers)
     batch_hgraph.node_senders = jnp.array(b_node_senders)
