@@ -9,7 +9,7 @@ from flax import nnx
 from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
 
-class HyperGraphModule(nnx.Module):
+class HyperGraphLayer(nnx.Module):
 
     r"""
     This module represents a layer of HyperGraph node-hedge combined convolution, in 
