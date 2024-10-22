@@ -36,22 +36,36 @@ data_dict = hgraph.data_dict()
 # key = jax.random.PRNGKey(42)
 rngs = nnx.Rngs(42)
 
-layers = [{'n_node_in': n_node_features,
+conv_layers = [{'n_node_in': n_node_features,
            'n_hedge_in': n_hedge_features,
-           'n_node_out': n_node_features+5,
-           'n_hedges_out': n_hedge_features+3},
-          {'n_node_in': n_node_features+5,
-           'n_hedge_in': n_hedge_features+3,
-           'n_node_out': n_node_features-10,
-           'n_hedge_out': n_hedge_features-8}]
+           'n_node_out': n_node_features,
+           'n_hedge_out': n_hedge_features},
+          {'n_node_in': n_node_features,
+           'n_hedge_in': n_hedge_features,
+           'n_node_out': n_node_features,
+           'n_hedge_out': n_hedge_features}]
+
+node_layers = [{'n_node_in': n_node_features,
+                'n_node_out': n_node_features},
+               {'n_node_in': n_node_features,
+                'n_node_out': n_node_features},
+               {'n_node_in': n_node_features,
+                'n_node_out': 1}]
+
+hedge_layers = [{'n_hedge_in': n_hedge_features},
+                {'n_hedge_in': n_hedge_features,
+                 'n_hedge_out': 1}]
 
 model = HyperGraphConvolution(
             rngs = rngs,
-            layers = layers
+            conv_layers = conv_layers,
+            node_layers = node_layers,
+            hedge_layers = hedge_layers
         )
 
-new_node_features, new_hedge_features = model(hgraph)
+total_energy = model(hgraph)
 
+"""
 # now create a batch of two graphs
 hgraphs = [hgraph, hgraph]
 
@@ -67,3 +81,4 @@ print(jnp.allclose(new_hedge_features, new_sgraph_hedges[0:n_hedges,:]))
 print(jnp.allclose(new_hedge_features, new_sgraph_hedges[n_hedges:,:]))
 
 print('Got here!')
+"""
