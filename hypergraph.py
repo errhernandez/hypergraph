@@ -180,6 +180,15 @@ class HyperGraph:
         self.hedge2node_receivers = jnp.array(incidence[1,:])
         self.hedge2node_senders = jnp.array(incidence[0,:])
 
+        # the following are only relevant for batching; when a hypergraph batch
+        # is constructed by concatenating several hypergraphs, the following 
+        # indices map nodes and hyperedges to individual hypergraphs in the batch
+        # hypergraph_batch ensures proper indexing of these arrays; for individual
+        # hypergraphs they are set to zero
+
+        self.batch_node_index = jnp.array(self.n_nodes * [0])
+        self.batch_hedge_index = jnp.array(self.n_hedges * [0])
+
     def data_dict(self) -> dict[str, jnp.ndarray]:
         """ Returns a dictionary with the hypergraph's data """
 

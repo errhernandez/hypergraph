@@ -64,21 +64,16 @@ model = HyperGraphConvolution(
         )
 
 total_energy = model(hgraph)
+print(f'Total energy of graph: {total_energy}')
 
-"""
 # now create a batch of two graphs
-hgraphs = [hgraph, hgraph]
+hgraphs = [hgraph, hgraph, hgraph, hgraph]
 
 sgraph = hypergraph_batch(hgraphs)
 
-new_sgraph_nodes, new_sgraph_hedges = model(sgraph)
+energies = model(sgraph)
 
-n_nodes = hgraph.n_nodes
-n_hedges = hgraph.n_hedges
-print(jnp.allclose(new_node_features, new_sgraph_nodes[0:n_nodes,:]))
-print(jnp.allclose(new_node_features, new_sgraph_nodes[n_nodes:,:]))
-print(jnp.allclose(new_hedge_features, new_sgraph_hedges[0:n_hedges,:]))
-print(jnp.allclose(new_hedge_features, new_sgraph_hedges[n_hedges:,:]))
+for n, energy in enumerate(energies):
+    print(f'Total energy of graph {n}: {energy}')
 
 print('Got here!')
-"""

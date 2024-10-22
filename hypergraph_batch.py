@@ -46,10 +46,20 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
     weights = []
     targets = []
 
+    node_index = []
+    hedge_index = []
+    # batch_node_index and batch_hedge_index are 1d vectors that map nodes an
+    # hedges (respectively) in a super-graph to the original hypergraph
+    # from which they came; it allows to map individual graphs
+    # to the right target when fitting the model
+
     n_hedges = 0
     n_nodes = 0
 
     for n_graph, hgraph in enumerate(hypergraphs):
+
+        node_index += hgraph.n_nodes*[n_graph]
+        hedge_index += hgraph.n_hedges*[n_graph]
 
         hedges = np.asarray(hgraph.incidence[0,:]) + n_hedges
         b_hedges = np.concatenate((b_hedges, hedges))
@@ -105,6 +115,9 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
 
     batch_hgraph.n_hedges = n_hedges
     batch_hgraph.n_nodes = n_nodes
+
+    batch_hgraph.batch_node_index = jnp.array(node_index)
+    batch_hgraph.batch_hedge_index = jnp.array(hedge_index)
 
     incidence = jnp.array([b_hedges, b_nodes])
     batch_hgraph.incidence = incidence

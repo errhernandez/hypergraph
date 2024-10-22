@@ -163,7 +163,10 @@ class HyperGraphConvolution(nnx.Module):
 
                node_features = jnp.tanh(node_features)
 
-        node_energy = jnp.sum(node_features, axis=0)
+        node_energy = jax.ops.segment_sum(
+                          node_features,
+                          segment_ids = hgraph.batch_node_index,
+                          indices_are_sorted = True)
 
         for n, layer in enumerate(self.hedge_layers):
 
@@ -173,7 +176,10 @@ class HyperGraphConvolution(nnx.Module):
 
                hedge_features = jnp.tanh(hedge_features)
 
-        hedge_energy = jnp.sum(hedge_features, axis=0)
+        hedge_energy = jax.ops.segment_sum(
+                           hedge_features,
+                           segment_ids = hgraph.batch_hedge_index,
+                           indices_are_sorted = True)
 
         total_energy = node_energy + hedge_energy
 
