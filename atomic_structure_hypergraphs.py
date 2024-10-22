@@ -35,8 +35,7 @@ class AtomicStructureHyperGraphs(ABC):
         species_list: list[str],
         node_feature_list: list[str] = [],
         n_total_hedge_features: int = 10,
-        pooling: str = "add",
-        key: jnp.ndarray = jax.random.PRNGKey(42)
+        pooling: str = "add"
     ) -> None:
 
         """
@@ -78,9 +77,6 @@ class AtomicStructureHyperGraphs(ABC):
              averaging over nodes. WARNING: this must be done in a
              concerted way (the same) in the GNN model definition!
         
-        :param key: (default = jax.random.PRNGKey(42)) for initialising non-physical
-             hedge features.       
-
         """
 
         self.species = species_list
@@ -103,10 +99,8 @@ class AtomicStructureHyperGraphs(ABC):
 
         n_features = n_total_hedge_features - 4
 
-        # we subtract 4 above because four features are going to be 
-        # taken up by the width of the electron and its position (3 coords)
-
-        self.hedge_features = jax.random.normal(key=key, shape=(n_features,))
+        # hedge_features are now set up in children classes
+        # self.hedge_features = jax.random.normal(key=key, shape=(n_features,))
 
         self.pooling = pooling
 
