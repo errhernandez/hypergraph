@@ -128,7 +128,7 @@ log_text += "- graph construction style: " + graph_type + "  \n"
 n_max_neighbours = input_data.get("nMaxNeighbours", 6)
 use_covalent_radii = input_data.get("useCovalentRadii", False)
 node_features = input_data.get("nodeFeatures", [])
-n_total_hedge_features = input_data.get("edgeFeatures", 10)
+n_hedge_features = input_data.get("edgeFeatures", 10)
 species = input_data.get("species", ["H", "C", "N", "O", "F"])
 calculate_forces = input_data.get("calculateForces", False)
 pooling = input_data.get("pooling", "add")
@@ -169,7 +169,7 @@ Graphs = set_up_hypergraphs(
     graph_type = graph_type,
     species = species, 
     node_feature_list = node_features,
-    n_total_hedge_features = 10,
+    n_hedge_features = 10,
     n_max_neighbours = n_max_neighbours,
     pooling = pooling
 )
@@ -233,7 +233,7 @@ description_file = target_directory + '/' + 'graph_description.yml'
 # we append to the input data information on the total number of node features
 
 input_data['nNodeFeatures'] = nNodeFeatures
-input_data['nTotalElectronFeatures'] = n_total_hedge_features
+input_data['nTotalElectronFeatures'] = n_hedge_features
 
 with open( description_file, 'w' ) as description:
     yaml.dump(input_data, description)

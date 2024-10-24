@@ -38,7 +38,6 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
 
     node_features = []
     hedge_features = []
-    hedge_properties = []
     hedge_convolution = []
     hedge2node_convolution = []
     node_convolution = []
@@ -95,7 +94,6 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
         # these must be concatenated at the end of the loop
         node_features.append(hgraph.node_features)
         hedge_features.append(hgraph.hedge_features)
-        hedge_properties.append(hgraph.hedge_properties)
         hedge_convolution.append(hgraph.hedge_convolution)
         hedge2node_convolution.append(hgraph.hedge2node_convolution)
         node_convolution.append(hgraph.node_convolution)
@@ -124,7 +122,6 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
 
     batch_hgraph.node_features = jnp.concatenate(node_features)
     batch_hgraph.hedge_features = jnp.concatenate(hedge_features)
-    batch_hgraph.hedge_properties = jnp.concatenate(hedge_properties)
     batch_hgraph.hedge_convolution = jnp.concatenate(hedge_convolution)
     batch_hgraph.hedge2node_convolution = jnp.concatenate(hedge2node_convolution)
     batch_hgraph.node_convolution = jnp.concatenate(node_convolution)

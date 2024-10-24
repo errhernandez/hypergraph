@@ -34,7 +34,7 @@ class AtomicStructureHyperGraphs(ABC):
         self,
         species_list: list[str],
         node_feature_list: list[str] = [],
-        n_total_hedge_features: int = 10,
+        n_hedge_features: int = 10,
         pooling: str = "add"
     ) -> None:
 
@@ -59,13 +59,13 @@ class AtomicStructureHyperGraphs(ABC):
              for each feature e.g. node_feature_list = ['atomic_number',
              'atomic_radius', 'covalent_radius']
 
-        :param n_total_hedge_features int: (default = 10) 
+        :param n_hedge_features int: (default = 10) 
              Specifies the total number of hedge features; the first two will be 
              two "physical" features, namely the hedge position (initially set as
              the middle of the bond if the hedge connects two atoms, or the position
              of the atom if the hedge represents an electron in a lone pair), and the
              second will be the radius of the electron sphere. Besides these two "physical"
-             features, there will be n_total_hedge_features - 2 additional "unphysical"
+             features, there will be n_hedge_features - 2 additional "unphysical"
              features, put here only to add flexibility to the model, and that will 
              be chosen randomly, initially the same for all hedges.
 
@@ -93,11 +93,9 @@ class AtomicStructureHyperGraphs(ABC):
 
         self.spec_features = self.generate_node_features()
 
-        self.num_node_features = self.spec_features[self.species[0]].size 
+        self.n_node_features = self.spec_features[self.species[0]].size 
 
-        self.n_total_hedge_features = n_total_hedge_features
-
-        n_features = n_total_hedge_features - 4
+        self.n_hedge_features = n_hedge_features
 
         # hedge_features are now set up in children classes
         # self.hedge_features = jax.random.normal(key=key, shape=(n_features,))
@@ -205,11 +203,6 @@ class AtomicStructureHyperGraphs(ABC):
         # we are done
 
         return spec_features
-
-    def n_node_features(self) -> int:
-        "return the number of node features"
-
-        return self.num_node_features
 
     @abstractmethod
     def structure2graph(self, file_name: str) -> HyperGraph:

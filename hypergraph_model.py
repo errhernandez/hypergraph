@@ -41,10 +41,7 @@ class HyperGraphConvolution(nnx.Module):
 
           :hedge_layers list[dict]: similar to node_layers, but for hedges, 
                a dict defining an MLP for calculating the energy contribution
-               coming from the hedges. Here it must be taken into account that
-               hedges (electrons) may have properties (hedge_properties) that
-               are not subject to the convolution (e.g. spin) but that nevertheless
-               should be taken into account to get their energy contribution.
+               coming from the hedges. 
                Attention: The last layer of the hedge MLP should output a
                single number!
                
@@ -151,7 +148,7 @@ class HyperGraphConvolution(nnx.Module):
 
             node_features, hedge_features = \
              layer(node_features, hedge_features, \
-             hgraph.data_dict())
+             hgraph.indices())
 
         # then act with the MLPs
 

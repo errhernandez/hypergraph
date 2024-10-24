@@ -9,7 +9,7 @@ def set_up_hypergraphs(
     graph_type: str,
     species: list[str],
     node_feature_list: list[str],
-    n_total_hedge_features: int = 10,
+    n_hedge_features: int = 10,
     n_max_neighbours: int = 12,
     pooling: str = "add",
     **kwargs
@@ -39,7 +39,7 @@ def set_up_hypergraphs(
                   zeros elsewhere), and one of length 18 (with a 1 at the entry of the element
                   group). Therefore, using 'group|period' adds 25 features to the nodes (ions). 
 
-      :param n_total_hedge_features int: the number of hedge features
+      :param n_hedge_features int: the number of hedge features
 
       :param pooling str: the type of pooling to perform by the model, can be 'add' or
           'mean'; the latter is appropriate for energy-per-atom regression, 'add' for 
@@ -58,7 +58,7 @@ def set_up_hypergraphs(
        graphs = QM9CovalentHyperGraphs(
                       species_list = species,
                       node_feature_list = node_feature_list,
-                      n_total_hedge_features = n_total_hedge_features,
+                      n_hedge_features = n_hedge_features,
                       n_max_neighbours = n_max_neighbours,
                       pooling = pooling,
                       alpha = alpha 

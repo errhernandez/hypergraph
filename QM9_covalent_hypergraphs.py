@@ -1,4 +1,5 @@
 
+import e3nn_jax as e3nn
 import jax
 import jax.numpy as jnp
 from mendeleev import element
@@ -29,11 +30,12 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         self,
         species_list: list[str],
         node_feature_list: list[str] = [],
-        n_total_hedge_features: int = 10,
+        n_hedge_features: int = 10,
         n_max_neighbours: int = 12,
         pooling: str = "add",
         alpha: float = 1.1,
-        key: jnp.ndarray = jax.random.PRNGKey(42)
+        r_min: float = 0.5, 
+        r_max: float = 2.0,
     ) -> None:
 
         # initialise the base class
@@ -41,9 +43,8 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         super().__init__(
            species_list = species_list, 
            node_feature_list = node_feature_list,
-           n_total_hedge_features = n_total_hedge_features,
-           pooling = pooling,
-           key = key
+           n_hedge_features = n_hedge_features,
+           pooling = pooling
         )
 
         self.n_max_neighbours = n_max_neighbours
@@ -51,6 +52,8 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         # critera, i.e. two atoms are bonded if their
         # separation is r <= alpha*(rc1 + rc2), where
         # rci are the respective covalent radii
+        self.r_min = r_min
+        self.r_max = r_max
 
         self.covalent_radii = self.get_covalent_radii()
 
@@ -233,14 +236,13 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         hedges = []
         hnodes = [] 
         hfeatures = []
-        hproperties = []
 
         for n_edge in range(num_edges): 
 
             if n_edge % 2 == 0:
-               spin = 1.
+               spin = jnp.array([1.])
             else:
-               spin = -1.
+               spin = jnp.array([-1.])
 
             hedges.append(n_edge)
             hedges.append(n_edge) # this is correct, should appear twice
@@ -254,12 +256,22 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
             width = distance[n_edge]
             position = (positions[node_i,:] + positions[node_j,:]) / 2.
 
-            phys = np.concatenate(([width], position))
+            # phys = np.concatenate(([width], position))
             # features = jnp.concatenate([jnp.array(phys),self.hedge_features])
-            features = self.hedge_features
+            # features = self.hedge_features
 
+            rij = distance[n_edge]
+
+            features = e3nn.soft_one_hot_linspace(
+                            rij, 
+                            start = self.r_min,
+                            end = self.r_max,
+                            number = self.n_hedge_features,
+                            basis = 'smooth_finite',
+                            cutoff = True)
+            
+            features = jnp.concatenate([spin, features])
             hfeatures.append(features)
-            hproperties.append([spin])
 
         n_remaining_electrons = n_valence_electrons - num_edges
 
@@ -286,20 +298,24 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
                       hnodes.append(n)
 
                       if n_edge % 2 == 0:
-                         spin = 1.
+                         spin = jnp.array([1.])
                       else:
-                         spin = -1.
+                         spin = jnp.array([-1.])
 
                       width = 1. # default electron width
-                      position = positions[n,:]
+                      # position = positions[n,:]
 
-                      phys = np.concatenate(([width], position))
-                      # features = jnp.concatenate([jnp.array(phys), \
-                      #             self.hedge_features])
-                      features = self.hedge_features
+                      features = e3nn.soft_one_hot_linspace(
+                                      rij, 
+                                      start = self.r_min,
+                                      end = self.r_max,
+                                      number = self.n_hedge_features,
+                                      basis = 'smooth_finite',
+                                      cutoff = True)
+
+                      features = jnp.concatenate([spin, features])
 
                       hfeatures.append(features)
-                      hproperties.append([spin])
 
                       n_electrons[n] += 1
 
@@ -307,7 +323,6 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
                       n_remaining_electrons -= 1
         
         hedge_features = jnp.array(hfeatures)
-        hedge_properties = jnp.array(hproperties)
 
         # incidence matrix
 
@@ -329,7 +344,6 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
             incidence = incidence,
             node_features = node_features, 
             hedge_features = hedge_features,
-            hedge_properties = hedge_properties,
             weights = weights,
             targets = properties,
             pos=pos

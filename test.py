@@ -16,7 +16,7 @@ from QM9_covalent_hypergraphs import QM9CovalentHyperGraphs
 
 import pdb; pdb.set_trace()
 
-file = '/Users/ehe/Work/Databases/QM9DataBase/train/dsgdb9nsd_000001.xyz'
+file = '/Users/ehe/Work/Databases/QM9DataBase/test/dsgdb9nsd_000003.xyz'
 
 species_list = ['H', 'C', 'N', 'O', 'F']
 node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
@@ -24,14 +24,14 @@ node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron
 
 GM = QM9CovalentHyperGraphs(species_list=species_list,
                             node_feature_list=node_feature_list,
-                            n_total_hedge_features=10)
+                            n_hedge_features=10)
 
 hgraph = GM.structure2graph(file)
 
 _, n_node_features = hgraph.node_features.shape
 _, n_hedge_features = hgraph.hedge_features.shape
 
-data_dict = hgraph.data_dict()
+indices = hgraph.indices()
 
 # key = jax.random.PRNGKey(42)
 rngs = nnx.Rngs(42)
