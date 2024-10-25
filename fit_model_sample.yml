@@ -1,0 +1,13 @@
+
+# set to True for a debug run
+debug: False
+
+# path to the data base containing the pickled hypergraphs used for training/validation/testing
+
+database: "../Databases/QM9ERHGraphDataBase/"
+
+# in the following we define the hypergraph convolution model, which has three parts, namely:
+# 1) graph convolution layers: specified by a list of dicts, with each dict giving
+#    the input and output dimensions of the hedge and node features; if output dimensions are
+#    not specified they are taken to be equal to the corresponding input
+

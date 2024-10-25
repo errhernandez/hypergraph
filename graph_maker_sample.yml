@@ -35,8 +35,10 @@ nodeFeatures:   # the following are a list of mendeleev recognised keywords
 #  - 'c6'                 # dispersion coefficient (Hartree/Bohr^6)
 #  etc
 
-edgeFeatures: 10   # the following specify hyper-edge features
+nEdgeFeatures: 10   # the following specify hyper-edge features
 
 graphType: 'covalentQM9'
+r_min: 0.5  # this is the minimum distance for hyper-edges
+r_max: 2.0  # this is the maximum distance for hyper-edges
 
 

@@ -176,7 +176,7 @@ Graphs = set_up_hypergraphs(
 
 # if re.match("^stand", graphClass):
 
-nNodeFeatures = Graphs.n_node_features()
+n_node_features = Graphs.n_node_features
 
 if use_covalent_radii:
    log_text += "- Using Covalent Radii to find neighbours \n"
@@ -185,7 +185,7 @@ else:
 
 write_node_features(node_features)
 
-log_text += "- nNodeFeatures: " + repr(nNodeFeatures) + "  \n"
+log_text += "- nNodeFeatures: " + repr(n_node_features) + "  \n"
 
    # log_text += write_parameters( 'Edge Distance Cutoff', edge_distance_cutoff )
    # log_text += "Edge Distance_cutoff: " + repr(edge_distance_cutoff) + "\n"
@@ -201,8 +201,6 @@ log_text += "- nNodeFeatures: " + repr(nNodeFeatures) + "  \n"
    #    log_text += "NOT using Dihedral Features \n"
     
 descriptionText = input_data.get("descriptionText", " ")
-
-descriptionText += log_text
 
 # now proceed to generate the graphs for training, validation and test datasets
 
@@ -232,8 +230,8 @@ description_file = target_directory + '/' + 'graph_description.yml'
 
 # we append to the input data information on the total number of node features
 
-input_data['nNodeFeatures'] = nNodeFeatures
-input_data['nTotalElectronFeatures'] = n_hedge_features
+input_data['nNodeFeatures'] = n_node_features
+input_data['nEdgeFeatures'] = n_hedge_features
 
 with open( description_file, 'w' ) as description:
     yaml.dump(input_data, description)

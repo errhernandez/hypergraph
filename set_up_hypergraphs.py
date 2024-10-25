@@ -55,13 +55,25 @@ def set_up_hypergraphs(
        else:
           alpha = 1.1
 
+       if 'r_min' in kwargs.keys():
+          r_min = kwargs['r_min']
+       else:
+          r_min = 0.5
+
+       if 'r_max' in kwargs.keys():
+          r_max = kwargs['r_max']
+       else:
+          r_max = 2.0
+
        graphs = QM9CovalentHyperGraphs(
                       species_list = species,
                       node_feature_list = node_feature_list,
                       n_hedge_features = n_hedge_features,
                       n_max_neighbours = n_max_neighbours,
                       pooling = pooling,
-                      alpha = alpha 
+                      alpha = alpha,
+                      r_min = r_min,
+                      r_max = r_max
 			    )
 
     else:  # we make this the default case
