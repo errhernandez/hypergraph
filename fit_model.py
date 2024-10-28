@@ -69,6 +69,13 @@ if n_training_max is None:
    train_list, val_list = train_test_split(train_files,
                                  test_size=train_val_fraction)
 else:
+   train_list, val_list = train_test_split(train_files[:n_training_max,
+                                 test_size=train_val_fraction)
+
+if n_test_max is None:
+   test_list = test_files
+else: 
+   test_list = test_files[:n_test_max]
    
 
    
