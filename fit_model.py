@@ -1,6 +1,7 @@
 
 from datetime import datetime
 import faulthandler
+from glob import glob
 import os
 import pdb
 import re
@@ -13,6 +14,7 @@ import markdown
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+from sklearn.model_selection import train_test_split
 import yaml
 
 from hypergraph_batch import hypergraph_batch
@@ -51,4 +53,31 @@ database_file = database_path + '/graph_description.yml'
 with open(database_file, 'r') as database_stream:
     database_data = yaml.load(database_stream, Loader=yaml.Loader)
 
+# read training and test data files
+
+train_path = database_path + 'train/'
+test_path = database_path + 'test/'
+
+train_files = glob(train_path + '*.pkl')
+test_files = glob(test_path + '*.pkl')
+
+n_training_max = input_data.get("n_training_max", None)
+n_test_max = input_data.get("n_test_max", None)
+train_validation_fraction = input_data.get("train_validation_fraction", 0.3)
+
+if n_training_max is None:
+   train_list, val_list = train_test_split(train_files,
+                                 test_size=train_val_fraction)
+else:
+   
+
+   
+   
+
+# read some parameters for optimisation 
+
+n_epochs = input_data.get("n_epochs", 100)
+n_batch = input_data.get("n_batch", 50)
+n_checkpoint_freq = input_data.get("n_checkpoint_freq", 10)
+learning_rate = input_data.get("learning_rate", 1.0e-3)
 
