@@ -101,7 +101,7 @@ class HyperGraphDataSet:
 
         return hgraph
 
-    def get_file_name(self, idx: int) -> str:
+    def get_filename(self, idx: int) -> str:
 
         """
         Returns the cluster data file name
