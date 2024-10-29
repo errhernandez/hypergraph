@@ -10,50 +10,66 @@ path = abspath('../hypergraph/')
 
 sys.path.append(path)
 
-from hypergraph_batch import hypergraph_batch
+from hypergraph_data_loader import HyperGraphDataLoader
+from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_model import HyperGraphConvolution
 from QM9_covalent_hypergraphs import QM9CovalentHyperGraphs
 
 import pdb; pdb.set_trace()
 
-file = '/Users/ehe/Work/Databases/QM9DataBase/test/dsgdb9nsd_000003.xyz'
+train_path = '/Users/ehe/Work/Databases/QM9ERHGraphDataBase/train/'
+test_path = '/Users/ehe/Work/Databases/QM9ERHGraphDataBase/test/'
 
-species_list = ['H', 'C', 'N', 'O', 'F']
-node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
-                     'en_pauling', 'group']
+train_set = HyperGraphDataSet(database_dir = train_path)
+test_set = HyperGraphDataSet(database_dir = test_path)
 
-GM = QM9CovalentHyperGraphs(species_list=species_list,
-                            node_feature_list=node_feature_list,
-                            n_hedge_features=10)
+train_dl = HyperGraphDataLoader(dataset = train_set, batch_size=1)
+test_dl = HyperGraphDataLoader(dataset = test_set)
 
-hgraph = GM.structure2graph(file)
+# species_list = ['H', 'C', 'N', 'O', 'F']
+# node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
+#                    'en_pauling', 'group']
 
-_, n_node_features = hgraph.node_features.shape
-_, n_hedge_features = hgraph.hedge_features.shape
+# GM = QM9CovalentHyperGraphs(species_list=species_list,
+#                             node_feature_list=node_feature_list,
+#                             n_hedge_features=10)
 
-indices = hgraph.indices()
+# hgraph = GM.structure2graph(file)
+
+# _, n_node_features = hgraph.node_features.shape
+# _, n_hedge_features = hgraph.hedge_features.shape
+
+# indices = hgraph.indices()
+
+# in order to define the model, we need to specify how many node and hedge features these
+# hypergraphs have, so get an example and interrogate it
+
+hgraph_sample = train_set.get(0)
+
+_, n_node_features_in = hgraph_sample.node_features.shape
+_, n_hedge_features_in = hgraph_sample.hedge_features.shape
 
 # key = jax.random.PRNGKey(42)
 rngs = nnx.Rngs(42)
 
-conv_layers = [{'n_node_in': n_node_features,
-           'n_hedge_in': n_hedge_features,
-           'n_node_out': n_node_features,
-           'n_hedge_out': n_hedge_features},
-          {'n_node_in': n_node_features,
-           'n_hedge_in': n_hedge_features,
-           'n_node_out': n_node_features,
-           'n_hedge_out': n_hedge_features}]
+conv_layers = [{'n_node_in': n_node_features_in,
+           'n_hedge_in': n_hedge_features_in,
+           'n_node_out': 30,
+           'n_hedge_out': 30},
+          {'n_node_in': 30,
+           'n_hedge_in': 30,
+           'n_node_out': 30,
+           'n_hedge_out': 30}]
 
-node_layers = [{'n_node_in': n_node_features,
-                'n_node_out': n_node_features},
-               {'n_node_in': n_node_features,
-                'n_node_out': n_node_features},
-               {'n_node_in': n_node_features,
+node_layers = [{'n_node_in': 30,
+                'n_node_out': 30},
+               {'n_node_in': 30,
+                'n_node_out': 30},
+               {'n_node_in': 30,
                 'n_node_out': 1}]
 
-hedge_layers = [{'n_hedge_in': n_hedge_features},
-                {'n_hedge_in': n_hedge_features,
+hedge_layers = [{'n_hedge_in': 30},
+                {'n_hedge_in': 30,
                  'n_hedge_out': 1}]
 
 model = HyperGraphConvolution(
@@ -63,17 +79,14 @@ model = HyperGraphConvolution(
             hedge_layers = hedge_layers
         )
 
-total_energy = model(hgraph)
-print(f'Total energy of graph: {total_energy}')
+print('Energies of train set')
+for n, sample in enumerate(train_dl):
+    energy = model(sample)
+    print(f'Total energy of graph {n}: {energy}')
 
-# now create a batch of two graphs
-hgraphs = [hgraph, hgraph, hgraph, hgraph]
-
-sgraph = hypergraph_batch(hgraphs)
-
-energies = model(sgraph)
-
-for n, energy in enumerate(energies):
+print('Energies of test set')
+for n, sample in enumerate(test_dl):
+    energy = model(sample)
     print(f'Total energy of graph {n}: {energy}')
 
 print('Got here!')
