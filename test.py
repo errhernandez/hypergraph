@@ -2,17 +2,12 @@
 from flax import nnx
 import jax.numpy as jnp
 import jax
-
-from os.path import abspath
-import sys
-
-path = abspath('../hypergraph/')
-
-sys.path.append(path)
+import optax
 
 from hypergraph_data_loader import HyperGraphDataLoader
 from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_model import HyperGraphConvolution
+from loss_function import loss_function
 from QM9_covalent_hypergraphs import QM9CovalentHyperGraphs
 
 import pdb; pdb.set_trace()
@@ -79,14 +74,28 @@ model = HyperGraphConvolution(
             hedge_layers = hedge_layers
         )
 
+nnx.display(model)
+
+learning_rate = 0.005
+momentum = 0.9
+
+optimizer = nnx.Optimizer(model, optax.adamw(learning_rate, momentum))
+
+metrics = nnx.MultiMetric(
+    accuracy = nnx.metrics.Accuracy(),
+    loss = nnx.metrics.Average('loss')    
+)
+
+nnx.display(optimizer)
+
 print('Energies of train set')
 for n, sample in enumerate(train_dl):
-    energy = model(sample)
-    print(f'Total energy of graph {n}: {energy}')
+    loss = loss_function(model, sample, 'U0')
+    print(f'Loss for sample {n}: {loss}')
 
 print('Energies of test set')
 for n, sample in enumerate(test_dl):
-    energy = model(sample)
-    print(f'Total energy of graph {n}: {energy}')
+    loss = loss_function(model, sample, 'U0')
+    print(f'Loss for sample {n}: {loss}')
 
 print('Got here!')

@@ -13,7 +13,7 @@ class HyperGraph:
         node_features: Optional[jnp.ndarray] = None,
         hedge_features: Optional[jnp.ndarray] = None,
         weights: Optional[jnp.ndarray] = None,
-        targets: Optional[jnp.ndarray] = None,
+        targets: Optional[dict] = None,
         **kwargs,
     ) -> None:
 

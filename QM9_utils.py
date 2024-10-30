@@ -27,7 +27,7 @@ atom_ref = dict(
 
 def read_QM9_structure(
        file_name: str 
-    ) -> tuple[int, int, list[str], float, dict[str, float]]:
+    ) -> tuple[int, int, list[str], float, dict[str, list[float]]]:
 
 
     """
@@ -97,25 +97,28 @@ def read_QM9_structure(
     frequencies = np.array(lines[n_atoms + 2].split(), dtype=float)
 
     # rather than returning a vector of properties, we will return 
-    # a dictionary for ease of use
+    # a dictionary where the values are arrays; for a single graph
+    # the array will be of length 1 (except for frequencies);
+    # in a batch of hypergraphs, the values will be arrays of the
+    # length of batch elements
 
     prop_dict = {}
-    prop_dict['A'] = molecular_data[0]
-    prop_dict['B'] = molecular_data[1]
-    prop_dict['C'] = molecular_data[2]
-    prop_dict['mu'] = molecular_data[3]
-    prop_dict['alpha'] = molecular_data[4]
-    prop_dict['ehomo'] = molecular_data[5]
-    prop_dict['elumo'] = molecular_data[6]
-    prop_dict['egap'] = molecular_data[7]
-    prop_dict['R2'] = molecular_data[8]
-    prop_dict['zpve'] = molecular_data[9]
-    prop_dict['U0'] = molecular_data[10]
-    prop_dict['U'] = molecular_data[11]
-    prop_dict['H'] = molecular_data[12]
-    prop_dict['G'] = molecular_data[13]
-    prop_dict['Cv'] = molecular_data[14]
-    prop_dict['freq'] = frequencies
+    prop_dict['A'] = [molecular_data[0]]
+    prop_dict['B'] = [molecular_data[1]]
+    prop_dict['C'] = [molecular_data[2]]
+    prop_dict['mu'] = [molecular_data[3]]
+    prop_dict['alpha'] = [molecular_data[4]]
+    prop_dict['ehomo'] = [molecular_data[5]]
+    prop_dict['elumo'] = [molecular_data[6]]
+    prop_dict['egap'] = [molecular_data[7]]
+    prop_dict['R2'] = [molecular_data[8]]
+    prop_dict['zpve'] = [molecular_data[9]]
+    prop_dict['U0'] = [molecular_data[10]]
+    prop_dict['U'] = [molecular_data[11]]
+    prop_dict['H'] = [molecular_data[12]]
+    prop_dict['G'] = [molecular_data[13]]
+    prop_dict['Cv'] = [molecular_data[14]]
+    prop_dict['freq'] = [frequencies]
 
     return molecule_id, n_atoms, species, coordinates, prop_dict
 

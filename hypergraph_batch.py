@@ -43,7 +43,11 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
     node_convolution = []
     node2hedge_convolution = []
     weights = []
-    targets = []
+
+    # targets is a dictionary with the same keys as individual hypergraphs 
+    # (assumed to have all the same keys); the values for a batch of hypergraphs
+    # will be arrays of the same length as the batch
+    targets = {}
 
     node_index = []
     hedge_index = []
@@ -99,7 +103,12 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
         node_convolution.append(hgraph.node_convolution)
         node2hedge_convolution.append(hgraph.node2hedge_convolution)
         weights.append(hgraph.weights)
-        targets.append(hgraph.targets)
+
+        for key in hgraph.targets.keys():
+            value = hgraph.targets[key]
+            batch_value = targets.get(key, [])
+            batch_value.append(value)
+            targets[key] = batch_value
 
         n_hedges += hgraph.n_hedges
         n_nodes += hgraph.n_nodes
@@ -127,7 +136,7 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
     batch_hgraph.node_convolution = jnp.concatenate(node_convolution)
     batch_hgraph.node2hedge_convolution = jnp.concatenate(node2hedge_convolution)
     batch_hgraph.weights = jnp.concatenate(weights)
-    # batch_hgraph.targets = jnp.concatenate(targets) # targets are now a dict
+    batch_hgraph.targets = targets
 
     batch_hgraph.node_receivers = jnp.array(b_node_receivers)
     batch_hgraph.node_senders = jnp.array(b_node_senders)
