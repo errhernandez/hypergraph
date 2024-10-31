@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 from glob import glob
 import pickle
 import random
@@ -15,13 +17,11 @@ class HyperGraphDataSet:
 
     def __init__(
         self,
-        database_dir: str,
+        database_dir: str = None,
         nMaxEntries: int = None,
         seed: int = 42,
-        transform: object = None,
-        pre_transform: object = None,
-        pre_filter: object = None,
-        file_extension: str = '.pkl'
+        file_extension: str = '.pkl',
+        files: Optional[list[str]] = None
     ) -> None:
 
         """
@@ -40,18 +40,26 @@ class HyperGraphDataSet:
 
         :param str file_extension: the extension of files in the database; default = .xyz
 
+        :files list[str] (optional): by default, with database_dir and file_extension this
+                  class constructs a dataset with all the files (or nMaxEntries if not None)
+                  contained in database_dir. It might be desirable however to split the files
+                  into two datasets (e.g. training and validation); in this case, the user
+                  must provide a list of filenames (full relative path). 
+
         """
 
         self.database_dir = database_dir
 
-        filenames = database_dir + "/*"+file_extension
+        if files is None:
 
-        files = glob(filenames)
+           filenames = database_dir + "/*"+file_extension
+
+           files = glob(filenames)
 
         self.n_structures = len(files)
 
         """
-        filenames contains a list of files, one for each item in
+        files contains a list of files, one for each item in
         the database if nMaxEntries != None and is set to some integer
         value less than n_structures, then nMaxEntries clusters are
         selected randomly for use.

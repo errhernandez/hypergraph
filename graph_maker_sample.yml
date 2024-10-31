@@ -4,14 +4,14 @@
 # This input file specifies how hyper-graph objects are to be constructed; it reads information
 # for defining node (atom) features and edge features.
 
-debug: True
+debug: False
 
 # it is possible to avoid generating the graph objects (usually for debug purposes);
 # in that case, uncomment the following line.
 generate_graphs: True
 
 # address where to find the data-base files, and where to put the graph files once created
-DataBaseDirectory: '/Users/ehe/Work/Databases/QM9Small'
+DataBaseDirectory: '/Users/ehe/Work/Databases/QM9DataBase'
 TargetDirectory: '../Databases/QM9ERHGraphDataBase'
 
 # the file extensions, both for the input and for the graph files
@@ -25,8 +25,8 @@ nodeFeatures:   # the following are a list of mendeleev recognised keywords
    - 'vdw_radius'
    - 'electron_affinity'
    - 'en_pauling'
-#  - 'nvalence'
-#  - 'group'
+   - 'nvalence()'
+   - 'group'
 
 # other possible keywords are
 #  - 'zeff'               # effective nuclear charge
@@ -35,7 +35,7 @@ nodeFeatures:   # the following are a list of mendeleev recognised keywords
 #  - 'c6'                 # dispersion coefficient (Hartree/Bohr^6)
 #  etc
 
-nEdgeFeatures: 10   # the following specify hyper-edge features
+nEdgeFeatures: 31   # the following specify hyper-edge features
 
 graphType: 'covalentQM9'
 r_min: 0.5  # this is the minimum distance for hyper-edges

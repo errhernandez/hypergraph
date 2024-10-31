@@ -18,7 +18,8 @@ from sklearn.model_selection import train_test_split
 import yaml
 
 from hypergraph_batch import hypergraph_batch
-from set_up_hypergraphs import set_up_hypergraphs
+from hypergraph_dataset import HyperGraphDataSet
+from hypergraph_dataloader import HyperGraphDataLoader
 
 """
 A driver script to fit a Graph Convolutional Neural Network GCNN model to
@@ -65,26 +66,36 @@ n_training_max = input_data.get("n_training_max", None)
 n_test_max = input_data.get("n_test_max", None)
 train_validation_fraction = input_data.get("train_validation_fraction", 0.3)
 
-if n_training_max is None:
-   train_list, val_list = train_test_split(train_files,
-                                 test_size=train_val_fraction)
+if n_training_max is None or n_training_max > len(train_files):
+   train_list, valid_list = train_test_split(train_files,
+                                 test_size=train_validation_fraction)
 else:
-   train_list, val_list = train_test_split(train_files[:n_training_max,
-                                 test_size=train_val_fraction)
+   train_list, valid_list = train_test_split(train_files[:n_training_max],
+                                 test_size=train_validation_fraction)
 
-if n_test_max is None:
+if n_test_max is None or n_test_max > len(test_files):
    test_list = test_files
 else: 
    test_list = test_files[:n_test_max]
    
+# now create training, validation and test datasets
 
+train_dataset = HyperGraphDataSet(files = train_list)
+valid_dataset = HyperGraphDataSet(files = valid_list)
+test_dataset = HyperGraphDataSet(files = test_list)
    
-   
-
 # read some parameters for optimisation 
 
 n_epochs = input_data.get("n_epochs", 100)
 n_batch = input_data.get("n_batch", 50)
 n_checkpoint_freq = input_data.get("n_checkpoint_freq", 10)
 learning_rate = input_data.get("learning_rate", 1.0e-3)
+
+# create dataloaders for each dataset
+
+train_dl = HyperGraphDataLoader(train_dataset, batch_size = n_batch)
+valid_dl = HyperGraphDataLoader(valid_dataset, batch_size = n_batch)
+test_dl = HyperGraphDataLoader(test_dataset)
+
+print('Got this far!')
 
