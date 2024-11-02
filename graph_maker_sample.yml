@@ -11,7 +11,8 @@ debug: False
 generate_graphs: True
 
 # address where to find the data-base files, and where to put the graph files once created
-DataBaseDirectory: '/Users/ehe/Work/Databases/QM9DataBase'
+# DataBaseDirectory: '/Users/ehe/Work/Databases/QM9DataBase'
+DataBaseDirectory: '../MoleculeDB/moleculedb/QM9DataBase/'
 TargetDirectory: '../Databases/QM9ERHGraphDataBase'
 
 # the file extensions, both for the input and for the graph files
@@ -35,7 +36,7 @@ nodeFeatures:   # the following are a list of mendeleev recognised keywords
 #  - 'c6'                 # dispersion coefficient (Hartree/Bohr^6)
 #  etc
 
-nEdgeFeatures: 31   # the following specify hyper-edge features
+nEdgeFeatures: 30   # the following specify hyper-edge features
 
 graphType: 'covalentQM9'
 r_min: 0.5  # this is the minimum distance for hyper-edges

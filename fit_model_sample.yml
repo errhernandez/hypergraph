@@ -6,9 +6,11 @@ debug: True
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 5000
-n_test_max: 1500
-train_validation_fraction: 0.3
+n_training_max: 200
+n_test_max: 100
+train_validation_fraction: 0.5
+training_batch_size: 10
+validation_batch_size: 10
 
 # In the following we define the hypergraph convolution model, which has three parts, namely:
 # 1) we start by giving a PRNGKey (an integer) for parameter initialisation
@@ -23,8 +25,8 @@ key: 42
 # below each line starting with '-' indicates a new layer
 
 convolution_layers:
-  - n_hedge_in: 30
-    n_node_in: 30
+  - n_hedge_in: 31
+    n_node_in: 31
     n_hedge_out: 60    # if undefined, taken equal to n_hedge_in
     n_node_out: 60     # if undefined, taken equal to n_node_in
   - n_hedge_in: 60
@@ -58,9 +60,6 @@ node_MLP:
       
 # define the training step
 
-n_epochs: 100
-n_batch: 50
+n_epochs: 20
 n_checkpoint_freq: 10
-learning_rate: 1.0e-3
-n_training_max: 5000
-n_test_max: 500
+learning_rate: 1.0e-2

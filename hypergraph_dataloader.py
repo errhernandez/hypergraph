@@ -1,11 +1,13 @@
 
-from collections.abc import Iterator
+from collections.abc import Iterable
+
+from torch.utils.data import DataLoader
 
 from hypergraph import HyperGraph
 from hypergraph_batch import hypergraph_batch
 from hypergraph_dataset import HyperGraphDataSet
 
-class HyperGraphDataLoader(Iterator):
+class HyperGraphDataLoader(DataLoader):
 
     """
     This class is written in emulation of the pytorch dataloader class. It 
@@ -19,7 +21,8 @@ class HyperGraphDataLoader(Iterator):
     def __init__(self,
                  dataset: HyperGraphDataSet,
                  batch_size: int = 1,
-                 return_last: bool = True
+                 shuffle: bool = False,
+                 drop_last: bool = False
         ) -> None:
         """
         Create an instance of a hypergraph data-loader.
@@ -42,20 +45,45 @@ class HyperGraphDataLoader(Iterator):
 
         """
 
-        self.dataset = dataset
-        self.length = dataset.len()
-        self.batch_size = batch_size
-        self.return_last = return_last
+        super().__init__(
+                dataset = dataset,
+                batch_size = batch_size,
+                shuffle = shuffle,
+                drop_last = drop_last,
+                collate_fn = hypergraph_batch
+        )
 
-        self.n_batches = int(self.length / self.batch_size)
+        # self.dataset = dataset
+        # self.length = dataset.len()
+        # self.batch_size = batch_size
+        # self.return_last = return_last
 
-        self.last_batch = False
-        if self.length % self.batch_size > 0:
-           self.last_batch = True
-           self.n_last_batch = self.length % self.batch_size
+        # self.n_batches = int(self.length / self.batch_size)
 
-        self.item_index = 0
-        self.batch_index = 0
+        # if self.length % self.batch_size > 0:
+        #  self.last_batch = True
+        #  self.n_last_batch = self.length % self.batch_size
+
+        # self.batch_index = 0
+        # self.item_index = 0
+
+"""
+    def __iter__(self) -> HyperGraph:
+
+        hgraph_list = []
+
+        n_item = 0
+
+        while n_item < self.batch_size and self.item_index < self.length:
+
+           hgraph_list.append(self.dataset.get(self.item_index))
+
+           n_item += 1
+           self.item_index += 1
+
+        batch = hypergraph_batch(hgraph_list)
+
+        yield batch
 
     def __next__(self) -> HyperGraph:
 
@@ -86,3 +114,4 @@ class HyperGraphDataLoader(Iterator):
 
               return batch
 
+"""

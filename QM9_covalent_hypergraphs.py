@@ -36,6 +36,7 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         alpha: float = 1.1,
         r_min: float = 0.5, 
         r_max: float = 2.0,
+        shift_energies: bool = True,
     ) -> None:
 
         # initialise the base class
@@ -54,6 +55,7 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         # rci are the respective covalent radii
         self.r_min = r_min
         self.r_max = r_max
+        self.shift_energies = shift_energies
 
         self.covalent_radii = self.get_covalent_radii()
 
@@ -142,7 +144,7 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
             labels,
             positions,
             properties
-        ) = read_QM9_structure(fileName)
+        ) = read_QM9_structure(fileName, self.shift_energies)
 
         # the total number of node features is given by the species features
 

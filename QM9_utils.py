@@ -26,7 +26,8 @@ atom_ref = dict(
 )
 
 def read_QM9_structure(
-       file_name: str 
+       file_name: str,
+       shift_energies: bool = True
     ) -> tuple[int, int, list[str], float, dict[str, list[float]]]:
 
 
@@ -39,6 +40,9 @@ def read_QM9_structure(
     Args:
 
     :param str file_name: filename containing the molecular information
+    :param bool shift_energies: if set to True (default), energy-related
+        properties (U0, U, H, G) are subtracted the sum of atomic reference
+        energies, giving the corresponding formation energy.
 
     :return: molecule_id (int): integer identifying the molecule number
         in the database n_atoms (int): number of atoms in the molecule
@@ -68,6 +72,8 @@ def read_QM9_structure(
 
     # below extract chemical labels, coordinates and charges
 
+    molecule_ref = 0.0
+
     m = 0
 
     for n in range(2, n_atoms + 2):
@@ -78,7 +84,9 @@ def read_QM9_structure(
 
         words = line.split()
 
-        species.append(words[0])
+        label = words[0]
+
+        species.append(label)
 
         x = float(words[1])
         y = float(words[2])
@@ -89,6 +97,8 @@ def read_QM9_structure(
         coordinates[m, :] = x, y, z
 
         # charge[m] = c
+
+        molecule_ref += atom_ref[label]
     
         m += 1
 
@@ -113,10 +123,16 @@ def read_QM9_structure(
     prop_dict['egap'] = [molecular_data[7]]
     prop_dict['R2'] = [molecular_data[8]]
     prop_dict['zpve'] = [molecular_data[9]]
-    prop_dict['U0'] = [molecular_data[10]]
-    prop_dict['U'] = [molecular_data[11]]
-    prop_dict['H'] = [molecular_data[12]]
-    prop_dict['G'] = [molecular_data[13]]
+    if shift_energies:
+       prop_dict['U0'] = [molecular_data[10] - molecule_ref]
+       prop_dict['U'] = [molecular_data[11] - molecule_ref]
+       prop_dict['H'] = [molecular_data[12] - molecule_ref]
+       prop_dict['G'] = [molecular_data[13] - molecule_ref]
+    else:
+       prop_dict['U0'] = [molecular_data[10]]
+       prop_dict['U'] = [molecular_data[11]]
+       prop_dict['H'] = [molecular_data[12]]
+       prop_dict['G'] = [molecular_data[13]]
     prop_dict['Cv'] = [molecular_data[14]]
     prop_dict['freq'] = [frequencies]
 

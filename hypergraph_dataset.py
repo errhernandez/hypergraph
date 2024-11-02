@@ -4,10 +4,11 @@ from typing import Optional
 from glob import glob
 import pickle
 import random
+from torch.utils.data import Dataset
 
 from hypergraph import HyperGraph
 
-class HyperGraphDataSet:
+class HyperGraphDataSet(Dataset):
 
     """
     :Class:
@@ -76,7 +77,7 @@ class HyperGraphDataSet:
             self.n_structures = len(files)
             self.filenames = files
 
-    def len(self) -> int:
+    def __len__(self) -> int:
         """
         :return: the number of entries in the database
         :rtype: int 
@@ -84,7 +85,7 @@ class HyperGraphDataSet:
 
         return self.n_structures
 
-    def get(self, idx: int) -> HyperGraph:
+    def __getitem__(self, idx: int) -> HyperGraph:
 
         """
         This function loads from file the corresponding data for entry
@@ -98,9 +99,6 @@ class HyperGraphDataSet:
         :rtype: HyperGraph
 
         """
-
-        # if torch.is_tensor(idx):
-        #   idx = idx.tolist()
 
         file_name = self.filenames[idx]
 
