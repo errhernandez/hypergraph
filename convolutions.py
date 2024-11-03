@@ -53,15 +53,11 @@ class NodeConvolution(nnx.Module):
               rngs = rngs
         )
 
-        # self.node_message = jax.vmap(node_lin)
-
         self.hedge_scaling = nnx.Linear(
              in_features = n_hedge_features,
              out_features = n_node_features_out,
              rngs = rngs
         )
-
-        # self.hedge_scaling = jax.vmap(hedge_lin)
 
     def __call__(self,
             node_features: jnp.ndarray,
@@ -97,7 +93,7 @@ class NodeConvolution(nnx.Module):
 
         sender_features = node_features[node_senders]
 
-        messages = jax.vmap(self.node_message)(sender_features)
+        messages = nnx.vmap(self.node_message)(sender_features)
 
         scaled_messages = node_convolution * messages
 
@@ -108,7 +104,7 @@ class NodeConvolution(nnx.Module):
 
         hedge_sender_features = hedge_features[hedge2node_senders]
 
-        hedge_messages = jax.vmap(self.hedge_scaling)(hedge_sender_features)
+        hedge_messages = nnx.vmap(self.hedge_scaling)(hedge_sender_features)
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
@@ -202,7 +198,7 @@ class HedgeConvolution(nnx.Module):
 
         sender_features = hedge_features[hedge_senders]
 
-        messages = jax.vmap(self.hedge_message)(sender_features)
+        messages = nnx.vmap(self.hedge_message)(sender_features)
 
         scaled_messages = hedge_adjacency * messages
 
@@ -213,7 +209,7 @@ class HedgeConvolution(nnx.Module):
 
         node_sender_features = node_features[node2hedge_senders]
 
-        node_messages = jax.vmap(self.node_scaling)(node_sender_features)
+        node_messages = nnx.vmap(self.node_scaling)(node_sender_features)
 
         scaled_node_messages = node2hedge_convolution * node_messages
 
