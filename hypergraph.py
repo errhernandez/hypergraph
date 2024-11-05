@@ -178,26 +178,33 @@ class HyperGraph:
         # hypergraph_batch ensures proper indexing of these arrays; for individual
         # hypergraphs they are set to zero
 
-        self.batch_node_index = jnp.array(self.n_nodes * [0])
-        self.batch_hedge_index = jnp.array(self.n_hedges * [0])
+        self.node_index = jnp.array(self.n_nodes * [0])
+        self.hedge_index = jnp.array(self.n_hedges * [0])
 
     def indices(self) -> dict[str, jnp.ndarray]:
         """ Returns a dictionary with the hypergraph's data """
 
         data = {}
 
+        data['node_index'] = self.node_index
         data['node_convolution'] = self.node_convolution
+        data['node_features'] = self.node_features
         data['node_receivers'] = self.node_receivers
         data['node_senders'] = self.node_senders
         data['node2hedge_convolution'] = self.node2hedge_convolution
         data['node2hedge_receivers'] = self.node2hedge_receivers
         data['node2hedge_senders'] = self.node2hedge_senders
 
+        data['hedge_index'] = self.hedge_index
         data['hedge_convolution'] = self.hedge_convolution
+        data['hedge_features'] = self.hedge_features
         data['hedge_receivers'] = self.hedge_receivers
         data['hedge_senders'] = self.hedge_senders
         data['hedge2node_convolution'] = self.hedge2node_convolution
         data['hedge2node_receivers'] = self.hedge2node_receivers
         data['hedge2node_senders'] = self.hedge2node_senders
+
+        data['incidence'] = self.incidence
+        data['targets'] = self.targets
 
         return data 

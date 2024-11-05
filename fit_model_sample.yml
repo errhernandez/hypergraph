@@ -1,16 +1,16 @@
 
 # set to True for a debug run
-debug: True
+debug: False
 
 # path to the data base containing the pickled hypergraphs used for training/validation/testing
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 200
+n_training_max: 50
 n_test_max: 100
-train_validation_fraction: 0.5
-training_batch_size: 10
-validation_batch_size: 10
+train_validation_fraction: 0.3
+training_batch_size: 5
+validation_batch_size: 5
 
 # In the following we define the hypergraph convolution model, which has three parts, namely:
 # 1) we start by giving a PRNGKey (an integer) for parameter initialisation
@@ -43,7 +43,7 @@ convolution_layers:
 # As for the convolution part, each '-' signals the start of a new MLP layer
 
 hedge_MLP:
-  - n_hedge_in: 60
+  - n_hedge_in: 31
     n_hedge_out: 60
   - n_hedge_in: 60
     n_hedge_out: 60

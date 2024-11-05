@@ -151,13 +151,24 @@ for epoch in range(n_epochs):
     validation_running_loss = 0.0
 
     for batch in train_dl:
-        loss = train_step(model, loss_function, optimizer, metrics, batch)
+        loss = train_step(model, loss_function, optimizer, \
+                                 metrics, batch.indices())
         running_loss += loss
 
     for batch in valid_dl:
-        loss = eval_step(model, loss_function, metrics, batch)
+        loss = eval_step(model, loss_function, metrics, batch.indices())
         validation_running_loss += loss
 
     print(f'epoch: {epoch}, running_loss: {running_loss}')
     print(f'epoch: {epoch}, validation_running_loss: {validation_running_loss}')
     
+# let's try now with the test set
+
+model.eval()
+
+for n, batch in enumerate(test_dl):
+    indices = batch.indices()
+    prediction = model(indices)
+    ground_truth = jnp.array(indices['targets']['U0'])
+    loss = jnp.sqrt((prediction - ground_truth)**2)
+    print(f'sample {n}, prediction: {prediction}, ref: {ground_truth}, mse: {loss}')

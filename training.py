@@ -2,6 +2,7 @@
 from typing import Callable
 
 from flax import nnx
+import jax.numpy as jnp
 
 from hypergraph import HyperGraph
 from hypergraph_model import HyperGraphConvolution
@@ -11,7 +12,7 @@ def train_step(
         loss_fn: Callable,
         optimizer: nnx.Optimizer,
         metrics: nnx.MultiMetric,
-        batch: HyperGraph
+        batch: dict[str, jnp.ndarray]
     ) -> float:
     """Implement a single step of training"""
 
@@ -28,7 +29,7 @@ def eval_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
         metrics: nnx.MultiMetric,
-        batch: HyperGraph
+        batch: dict[str, jnp.ndarray]
     ) -> float:
 
     loss = loss_fn(model, batch)

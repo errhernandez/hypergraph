@@ -123,29 +123,28 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
     batch_hgraph.n_hedges = n_hedges
     batch_hgraph.n_nodes = n_nodes
 
-    batch_hgraph.batch_node_index = jnp.array(node_index)
-    batch_hgraph.batch_hedge_index = jnp.array(hedge_index)
-
     incidence = jnp.array([b_hedges, b_nodes])
     batch_hgraph.incidence = incidence
 
-    batch_hgraph.node_features = jnp.concatenate(node_features)
-    batch_hgraph.hedge_features = jnp.concatenate(hedge_features)
-    batch_hgraph.hedge_convolution = jnp.concatenate(hedge_convolution)
-    batch_hgraph.hedge2node_convolution = jnp.concatenate(hedge2node_convolution)
+    batch_hgraph.node_index = jnp.array(node_index)
     batch_hgraph.node_convolution = jnp.concatenate(node_convolution)
-    batch_hgraph.node2hedge_convolution = jnp.concatenate(node2hedge_convolution)
-    batch_hgraph.weights = jnp.concatenate(weights)
-    batch_hgraph.targets = targets
-
+    batch_hgraph.node_features = jnp.concatenate(node_features)
     batch_hgraph.node_receivers = jnp.array(b_node_receivers)
     batch_hgraph.node_senders = jnp.array(b_node_senders)
+    batch_hgraph.node2hedge_convolution = jnp.concatenate(node2hedge_convolution)
     batch_hgraph.node2hedge_receivers = jnp.array(b_node2hedge_receivers)
     batch_hgraph.node2hedge_senders = jnp.array(b_node2hedge_senders)
 
+    batch_hgraph.hedge_index = jnp.array(hedge_index)
+    batch_hgraph.hedge_convolution = jnp.concatenate(hedge_convolution)
+    batch_hgraph.hedge_features = jnp.concatenate(hedge_features)
     batch_hgraph.hedge_receivers = jnp.array(b_hedge_receivers)
     batch_hgraph.hedge_senders = jnp.array(b_hedge_senders)
+    batch_hgraph.hedge2node_convolution = jnp.concatenate(hedge2node_convolution)
     batch_hgraph.hedge2node_receivers = jnp.array(b_hedge2node_receivers)
     batch_hgraph.hedge2node_senders = jnp.array(b_hedge2node_senders)
+
+    batch_hgraph.weights = jnp.concatenate(weights)
+    batch_hgraph.targets = targets
 
     return batch_hgraph

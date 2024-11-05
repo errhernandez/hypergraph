@@ -1,6 +1,4 @@
 
-from typing import Optional
-
 import jax
 import jax.numpy as jnp
 from flax import nnx
@@ -8,12 +6,12 @@ from flax import nnx
 from hypergraph import HyperGraph
 from hypergraph_layer import HyperGraphLayer
 
-r"""
-   This class combines an arbitrary number of HyperGraphLayer modules
-   to result in a full HyperGraphConvolution module. 
-"""
-
 class HyperGraphConvolution(nnx.Module):
+
+    r"""
+       This class combines an arbitrary number of HyperGraphLayer modules
+       to result in a full HyperGraphConvolution module. 
+    """
 
     def __init__(self, 
           rngs: nnx.Rngs,
@@ -134,21 +132,36 @@ class HyperGraphConvolution(nnx.Module):
                          )
                                     )
 
-
     def __call__(self,
-          hgraph: HyperGraph
-        ) -> tuple[jnp.array, jnp.array]:
+          hg_data: dict[str, jnp.ndarray]
+        ) -> jnp.array:
 
-        node_features = hgraph.node_features
-        hedge_features = hgraph.hedge_features
+        r"""
+        Implements the hypergraph convolutional model on a given input
+        hypergraph. The hypergraph data is passed as a dictionary rather
+        than a hypergraph object, so as to make this jittable.
+
+        Args: 
+
+           :hg_data (dict): a dictionary containing all the relevant 
+               indices and matrices, as well as targets defining a 
+               hypergraph or a batch of hypergraphs. For definitions see
+               method indices() in hypergraph.py
+
+        """
+
+        node_features = hg_data['node_features']
+        hedge_features = hg_data['hedge_features']
 
         # first do the hypergraph convolution
 
         for layer in self.conv_layers:
 
-            node_features, hedge_features = \
-             layer(node_features, hedge_features, \
-             hgraph.indices())
+            node_features, hedge_features = layer(
+                   node_features, \
+                   hedge_features, \
+                   hg_data
+            )
 
         # then act with the MLPs
 
@@ -162,7 +175,7 @@ class HyperGraphConvolution(nnx.Module):
 
         node_energy = jax.ops.segment_sum(
                           node_features,
-                          segment_ids = hgraph.batch_node_index,
+                          segment_ids = hg_data['node_index'],
                           indices_are_sorted = True)
 
         for n, layer in enumerate(self.hedge_layers):
@@ -175,7 +188,7 @@ class HyperGraphConvolution(nnx.Module):
 
         hedge_energy = jax.ops.segment_sum(
                            hedge_features,
-                           segment_ids = hgraph.batch_hedge_index,
+                           segment_ids = hg_data['hedge_index'],
                            indices_are_sorted = True)
 
         total_energy = node_energy + hedge_energy
