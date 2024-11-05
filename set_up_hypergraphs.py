@@ -53,7 +53,7 @@ def set_up_hypergraphs(
        if 'alpha' in kwargs.keys():
           alpha = kwargs['alpha']
        else:
-          alpha = 1.1
+          alpha = 1.2
 
        if 'r_min' in kwargs.keys():
           r_min = kwargs['r_min']
@@ -81,7 +81,7 @@ def set_up_hypergraphs(
        if 'alpha' in kwargs.keys():
           alpha = kwargs['alpha']
        else:
-          alpha = 1.1
+          alpha = 1.2
 
        graphs = QM9CovalentHyperGraphs(
                       species_list = species,

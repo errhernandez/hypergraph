@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import jax
 import optax
 
-from hypergraph_data_loader import HyperGraphDataLoader
+from hypergraph_dataloader import HyperGraphDataLoader
 from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_model import HyperGraphConvolution
 from loss_function import loss_function
@@ -21,15 +21,17 @@ test_set = HyperGraphDataSet(database_dir = test_path)
 train_dl = HyperGraphDataLoader(dataset = train_set, batch_size=1)
 test_dl = HyperGraphDataLoader(dataset = test_set)
 
-# species_list = ['H', 'C', 'N', 'O', 'F']
-# node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
-#                    'en_pauling', 'group']
+species_list = ['H', 'C', 'N', 'O', 'F']
+node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
+                   'en_pauling', 'group']
 
-# GM = QM9CovalentHyperGraphs(species_list=species_list,
-#                             node_feature_list=node_feature_list,
-#                             n_hedge_features=10)
+GM = QM9CovalentHyperGraphs(species_list=species_list,
+                            node_feature_list=node_feature_list,
+                            n_hedge_features=10)
 
-# hgraph = GM.structure2graph(file)
+file = '../Databases/QM9DataBase/train/dsgdb9nsd_129158.xyz'
+
+hgraph = GM.structure2graph(file)
 
 # _, n_node_features = hgraph.node_features.shape
 # _, n_hedge_features = hgraph.hedge_features.shape

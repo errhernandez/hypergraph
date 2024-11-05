@@ -33,7 +33,7 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
         n_hedge_features: int = 10,
         n_max_neighbours: int = 12,
         pooling: str = "add",
-        alpha: float = 1.1,
+        alpha: float = 1.2,
         r_min: float = 0.5, 
         r_max: float = 2.0,
         shift_energies: bool = True,
@@ -248,13 +248,15 @@ class QM9CovalentHyperGraphs(AtomicStructureHyperGraphs):
 
             hedges.append(n_edge)
             hedges.append(n_edge) # this is correct, should appear twice
-            hnodes.append(edge_index[0,n_edge])
-            hnodes.append(edge_index[1,n_edge])
+
+            node_i, node_j = edge_index[:,n_edge]
+           
+            hnodes.append(node_i)
+            hnodes.append(node_j)
 
             # here we create the two physical hedge features, namely
             # position and width, and append the "non-physical" features
 
-            node_i, node_j = edge_index[:,n_edge]
             width = distance[n_edge]
             position = (positions[node_i,:] + positions[node_j,:]) / 2.
 
