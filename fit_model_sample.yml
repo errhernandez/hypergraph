@@ -1,14 +1,14 @@
 
 # set to True for a debug run
-debug: True
+debug: False
 
 # path to the data base containing the pickled hypergraphs used for training/validation/testing
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 200
+n_training_max: 500
 n_test_max: 100
-train_validation_fraction: 0.5
+train_validation_fraction: 0.2
 training_batch_size: 10
 validation_batch_size: 10
 
@@ -60,6 +60,6 @@ node_MLP:
       
 # define the training step
 
-n_epochs: 20
+n_epochs: 100
 n_checkpoint_freq: 10
 learning_rate: 1.0e-2

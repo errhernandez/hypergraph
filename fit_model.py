@@ -133,7 +133,7 @@ print('Got this far!')
 
 # define and display an optimizer
 
-optimizer = nnx.Optimizer(model, optax.adamw(learning_rate, momentum))
+optimizer = nnx.Optimizer(model, optax.adam(learning_rate, momentum))
 metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
@@ -158,6 +158,16 @@ for epoch in range(n_epochs):
         loss = eval_step(model, loss_function, metrics, batch)
         validation_running_loss += loss
 
-    print(f'epoch: {epoch}, running_loss: {running_loss}')
-    print(f'epoch: {epoch}, validation_running_loss: {validation_running_loss}')
+    print(f'epoch: {epoch}, running_loss: {running_loss}, validation_running_loss: {validation_running_loss}')
     
+# let's try now with the test set
+
+model.eval()
+
+for n, batch in enumerate(test_dl):
+    prediction = model(batch)
+    ground_truth = jnp.array(batch.targets['U0'])
+    prediction = prediction[0,0]
+    ground_truth = ground_truth[0,0]
+    loss = jnp.sqrt((prediction - ground_truth)**2)
+    print(f'sample {n}, prediction: {prediction}, ref: {ground_truth}, mse: {loss}')
