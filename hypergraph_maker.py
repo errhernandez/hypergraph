@@ -113,15 +113,7 @@ else:
 
 # graphClass = input_data.get("graphClass", "standard")
 
-log_text = "\n\n\n"
-log_text += "------------------------------------------------\n"
-log_text += "#             HyperGraph Description            \n"
-log_text += "------------------------------------------------\n"
-log_text += "\n\n"
-
-# log_text += "- graph class: " + graphClass + "  \n"
-graph_type = input_data.get("graphType", "XG")  # default is Xie-Grossman
-log_text += "- graph construction style: " + graph_type + "  \n"
+graph_type = input_data.get("graphType", "Covalent")  # default is Covalent
 
 # now specify the graph construction strategy
 
@@ -130,7 +122,6 @@ use_covalent_radii = input_data.get("useCovalentRadii", False)
 node_features = input_data.get("nodeFeatures", [])
 n_hedge_features = input_data.get("nEdgeFeatures", 10)
 species = input_data.get("species", ["H", "C", "N", "O", "F"])
-calculate_forces = input_data.get("calculateForces", False)
 pooling = input_data.get("pooling", "add")
 
 # FOLLOWING COMMENTS NEED TO BE UPDATED!!!!!
@@ -162,9 +153,6 @@ transformData = input_data.get("transformData", False)
 # transform = SetUpDataTransform( transformData, directories )
 transform = None
 
-if transform:
-    log_text += "- Using data transformation " + transformData + "   \n"
-
 Graphs = set_up_hypergraphs(
     graph_type = graph_type,
     species = species, 
@@ -178,28 +166,8 @@ Graphs = set_up_hypergraphs(
 
 n_node_features = Graphs.n_node_features
 
-if use_covalent_radii:
-   log_text += "- Using Covalent Radii to find neighbours \n"
-else:
-   log_text += "- nMaxNeighbours: " + repr(n_max_neighbours) + "  \n"
-
 write_node_features(node_features)
 
-log_text += "- nNodeFeatures: " + repr(n_node_features) + "  \n"
-
-   # log_text += write_parameters( 'Edge Distance Cutoff', edge_distance_cutoff )
-   # log_text += "Edge Distance_cutoff: " + repr(edge_distance_cutoff) + "\n"
-
-   # if bond_angle_features:
-      # log_text += "Using Bond Angle Features \n"
-   # else:
-   #   log_text += "NOT using Bond Angle Features \n"
-
-   # if dihedral_angle_features:
-   #  log_text += "Using Dihedral Features \n"
-   # else:
-   #    log_text += "NOT using Dihedral Features \n"
-    
 descriptionText = input_data.get("descriptionText", " ")
 
 # now proceed to generate the graphs for training, validation and test datasets
@@ -213,14 +181,6 @@ if make_graphs:
                          target_test_path, output_file_ext )
 
 # save the description text as a new key to the yaml file
-
-log_text += "\n\n"
-log_text += "------------------------------------------------\n"
-log_text += "#           End of Graph Description            \n"
-log_text += "------------------------------------------------\n"
-log_text += "\n\n"
-
-input_data['descriptionText'] = log_text
 
 # finally, we will write a yaml file containing a description of the 
 # graph construction; this will be later read and employed by the 

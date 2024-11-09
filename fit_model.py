@@ -3,6 +3,7 @@ from datetime import datetime
 import faulthandler
 from glob import glob
 import os
+import pathlib
 import pdb
 import re
 import sys
@@ -16,6 +17,7 @@ import numpy as np
 import optax
 import pickle
 from sklearn.model_selection import train_test_split
+from torch.utils.tensorboard import SummaryWriter
 import yaml
 
 from hypergraph_batch import hypergraph_batch
@@ -23,6 +25,7 @@ from hypergraph_model import HyperGraphConvolution
 from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_dataloader import HyperGraphDataLoader
 from loss_function import loss_function
+from run_banner import run_banner
 from training import train_step, eval_step
 
 """
@@ -47,7 +50,29 @@ if debug:
     faulthandler.enable()
     pdb.set_trace()
 
-# path to the input data
+time_string = datetime.now().strftime("%d%m%Y-%H%M%S")
+
+# create a log file for the run
+
+log_dir = input_data.get("log_dir", './runs/')
+log_file_str = input_data.get("log_file", 'test_run')
+log_file = log_dir + log_file_str + '_' + time_string + '.log'
+
+if not os.path.exists(log_dir):  # check if we need to create the log dir
+    log_path = pathlib.Path(log_dir)
+    log_path.mkdir()
+
+# create an instance of SummaryWriter for logging purposes
+
+writer = SummaryWriter(log_file)
+
+banner = run_banner(time_string)
+print(banner) # print it also to standard output
+banner = markdown.markdown(banner)
+
+writer.add_text("Banner", banner)
+
+# path to the input data base
 
 database_path = input_data.get("database", "../Databases/QM9ERHGraphDatabase/")
 
@@ -107,6 +132,14 @@ test_dl = HyperGraphDataLoader(test_dataset)
 
 rngs = nnx.Rngs(42)
 convolution_layers = input_data["convolution_layers"]
+
+# the first convolution layer has its input determined by the node and hedge 
+# feature sizes encoded in the database, so for this layer, we must take these if 
+# what the user specifies in the input file is different
+
+convolution_layers[0]['n_hedge_in'] = database_data['nEdgeFeatures']
+convolution_layers[0]['n_node_in'] = database_data['nNodeFeatures']
+
 hedge_MLP = input_data["hedge_MLP"]
 node_MLP = input_data["node_MLP"]
 
@@ -145,6 +178,9 @@ metrics_history = {
         'valid_loss': []
         }
 
+print("epoch      train-loss      validation-loss")
+print("------------------------------------------")
+
 for epoch in range(n_epochs):
     
     running_loss = 0.0
@@ -159,15 +195,58 @@ for epoch in range(n_epochs):
         validation_running_loss += loss
 
     print(f'epoch: {epoch}, running_loss: {running_loss}, validation_running_loss: {validation_running_loss}')
+
+    if writer is not None:
+        writer.add_scalar("Training Loss", float(running_loss), epoch)
+        writer.add_scalar("Validation Loss", float(validation_running_loss), epoch)
     
 # let's try now with the test set
 
 model.eval()
 
+print("         TEST SAMPLE ENERGIES             ")
+print("------------------------------------------")
+
+ref = []
+prd = []
+lss = []
+abslss = []
+
 for n, batch in enumerate(test_dl):
+
     prediction = model(batch)
     ground_truth = jnp.array(batch.targets['U0'])
     prediction = prediction[0,0]
     ground_truth = ground_truth[0,0]
     loss = jnp.sqrt((prediction - ground_truth)**2)
+
     print(f'sample {n}, prediction: {prediction}, ref: {ground_truth}, mse: {loss}')
+
+    ref.append(ground_truth)
+    prd.append(prediction)
+    lss.append(prediction - ground_truth)
+    abslss.append(loss)
+
+reference = np.array(ref)
+predicted = np.array(prd)
+difference = np.array(lss)
+sqrtloss = np.array(abslss)
+
+if writer is not None:
+
+    e_max = np.max(reference)
+    e_min = np.min(reference)
+
+    x = np.linspace(e_min, e_max, 100)
+
+    figPredVsExN = plt.figure()
+    plt.plot(reference, predicted, "bo", label="model predictions")
+    plt.plot(x, x, "r-", label="exact")
+    plt.legend()
+
+    writer.add_figure("Prediction vs. exact ", figPredVsExN, n_epochs)
+    writer.add_histogram(
+        "Distribution of errors normalised data (prediction - exact)", difference
+    )
+
+writer.close()

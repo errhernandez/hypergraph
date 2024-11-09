@@ -2,11 +2,20 @@
 # set to True for a debug run
 debug: False
 
+# set a directory and file name for the log-file for this run
+
+log_dir: '../HyperGraphRuns/'
+log_file: 'test_run' # don't use a file extension; '.log' will be added automatically
+# the actual file name will be appended with a time string in the directory log_dir
+
+# a log message for the run
+log_message: 'Hello, HyperGraphs of the World, unite!'
+
 # path to the data base containing the pickled hypergraphs used for training/validation/testing
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 500
+n_training_max: 100
 n_test_max: 100
 train_validation_fraction: 0.2
 training_batch_size: 10
@@ -24,9 +33,12 @@ key: 42
 # construct a model with three hypergraph convolution layers
 # below each line starting with '-' indicates a new layer
 
+# n_hedge_in and n_node_in in the first convolution must be read from the information in 
+# the database, so the numbers given here as input sizes for the first layer will actually
+# be ignored if they are different from what the database was constructed with
 convolution_layers:
-  - n_hedge_in: 31
-    n_node_in: 31
+  - n_hedge_in: 1
+    n_node_in: 1
     n_hedge_out: 60    # if undefined, taken equal to n_hedge_in
     n_node_out: 60     # if undefined, taken equal to n_node_in
   - n_hedge_in: 60
@@ -60,6 +72,6 @@ node_MLP:
       
 # define the training step
 
-n_epochs: 100
+n_epochs: 10
 n_checkpoint_freq: 10
 learning_rate: 1.0e-2
