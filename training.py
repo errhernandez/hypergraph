@@ -1,7 +1,10 @@
 
 from typing import Callable
 
-from flax import nnx
+import equinox as eqx
+# from flax import nnx
+import jax
+import optax
 from torch.utils.tensorboard import SummaryWriter
 
 from hypergraph import HyperGraph
@@ -11,12 +14,12 @@ from hypergraph_model import HyperGraphConvolution
 def train_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
-        optimizer: nnx.Optimizer,
+        optimizer: optax.GradientTransformation,
         batch: HyperGraph
     ) -> float:
     """Implement a single step of training"""
 
-    grad_fn = nnx.value_and_grad(loss_fn) # has_aux=True)
+    grad_fn = eqx.filter_value_and_grad(loss_fn) # has_aux=True)
 
     loss, grads = grad_fn(model, batch)
 
@@ -38,9 +41,9 @@ def eval_step(
 
 def train_model(
       n_epochs: int,
-      model: nnx.Module,
+      model: eqx.Module,
       loss_func: Callable,
-      optimizer: nnx.Optimizer, 
+      optimizer: optax.GradientTransformation, 
       train_dl: HyperGraphDataLoader,
       valid_dl: HyperGraphDataLoader,
       n_epoch_0: int = 0,
@@ -51,8 +54,6 @@ def train_model(
    print("epoch-run/epoch      train-loss      validation-loss")
    print("----------------------------------------------------")
  
-   # model.train()  I don't think this is necessary in nnx
-
    for epoch in range(n_epochs):
 
        n_epoch = n_epoch_0 + epoch

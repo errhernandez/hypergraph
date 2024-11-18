@@ -1,16 +1,16 @@
 
 from typing import Optional
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
-from flax import nnx
 
 from hypergraph import HyperGraph
 
 # first we are going to define two sub-modules, one node convolution, one for hedge convolution
 # these will then become part of the HyperGraphModule model
 
-class NodeConvolution(nnx.Module):
+class NodeConvolution(eqx.Module):
 
     r"""
     This module takes care of node convolution in a hypergraph. In essence, a node receives
@@ -20,11 +20,11 @@ class NodeConvolution(nnx.Module):
     connected to the node, after filtering them through a second linear layer (self.hedge_scaling). 
     """
 
-    node_message: nnx.Linear
-    hedge_scaling: nnx.Linear
+    node_message: eqx.nn.Linear
+    hedge_scaling: eqx.nn.Linear
 
     def __init__(self,
-            rngs: nnx.Rngs,
+            key: jax.Array,
             n_node_features_in: int,
             n_hedge_features: int,
             n_node_features_out: Optional[int] = None,
@@ -32,13 +32,15 @@ class NodeConvolution(nnx.Module):
 
         r"""
         Args:
-           key (jax.random.PRNGKey): random key for initialisation purposes.
+           key (jax.Array): random key for initialisation purposes.
            n_node_features_in (int): input node feature vector dimension.
            n_hedge_features (int): hedge feature vector dimension.
            n_node_features_out (int, optional): output node feature vector dimension;
              if not given assumed to be same as n_node_features_in
 
         """
+
+        key1, key2 = jax.random.split(key,2)
 
         if n_node_features_out is None: 
            n_node_features_out = n_node_features_in
@@ -47,16 +49,16 @@ class NodeConvolution(nnx.Module):
         # one for transforming node features, and one for obtaining
         # hedge scaling  
 
-        self.node_message = nnx.Linear(
+        self.node_message = eqx.nn.Linear(
               in_features = n_node_features_in,
               out_features = n_node_features_out,
-              rngs = rngs
+              key = key1
         )
 
-        self.hedge_scaling = nnx.Linear(
+        self.hedge_scaling = eqx.nn.Linear(
              in_features = n_hedge_features,
              out_features = n_node_features_out,
-             rngs = rngs
+             key = key2
         )
 
     def __call__(self,
@@ -93,7 +95,7 @@ class NodeConvolution(nnx.Module):
 
         sender_features = node_features[node_senders]
 
-        messages = nnx.vmap(self.node_message)(sender_features)
+        messages = jax.vmap(self.node_message)(sender_features)
 
         scaled_messages = node_convolution * messages
 
@@ -104,18 +106,18 @@ class NodeConvolution(nnx.Module):
 
         hedge_sender_features = hedge_features[hedge2node_senders]
 
-        hedge_messages = nnx.vmap(self.hedge_scaling)(hedge_sender_features)
+        hedge_messages = jax.vmap(self.hedge_scaling)(hedge_sender_features)
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
                               hedge2node_receivers)
 
-        output = gathered_scaling * gathered_messages
+        output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output
 
-class HedgeConvolution(nnx.Module):
+class HedgeConvolution(eqx.Module):
 
     r"""
     This module takes care of hedge convolution in a hypergraph. It is a mirror image of
@@ -126,11 +128,11 @@ class HedgeConvolution(nnx.Module):
     connected to the hedge, after filtering them through a second linear layer (self.node_scaling). 
     """
 
-    hedge_message: nnx.Linear
-    node_scaling: nnx.Linear
+    hedge_message: eqx.nn.Linear
+    node_scaling: eqx.nn.Linear
 
     def __init__(self,
-            rngs: nnx.Rngs,
+            key: jax.Array,
             n_hedge_features_in: int,
             n_node_features: int,
             n_hedge_features_out: Optional[int] = None
@@ -146,22 +148,24 @@ class HedgeConvolution(nnx.Module):
 
         """
 
+        key1, key2 = jax.random.split(key, 2)
+
         if n_hedge_features_out is None:
            n_hedge_features_out = n_hedge_features_in
 
         # define two linear layers (eventually these may become full MLPs)
         # one for transforming node features, and one for 
 
-        self.hedge_message = nnx.Linear(
+        self.hedge_message = eqx.nn.Linear(
              in_features = n_hedge_features_in,
              out_features = n_hedge_features_out,
-             rngs = rngs
+             key = key1
         )
 
-        self.node_scaling = nnx.Linear(
+        self.node_scaling = eqx.nn.Linear(
              in_features = n_node_features,
              out_features = n_hedge_features_out,
-             rngs = rngs
+             key = key2
         )
 
     def __call__(self,
@@ -198,7 +202,7 @@ class HedgeConvolution(nnx.Module):
 
         sender_features = hedge_features[hedge_senders]
 
-        messages = nnx.vmap(self.hedge_message)(sender_features)
+        messages = jax.vmap(self.hedge_message)(sender_features)
 
         scaled_messages = hedge_adjacency * messages
 
@@ -209,14 +213,14 @@ class HedgeConvolution(nnx.Module):
 
         node_sender_features = node_features[node2hedge_senders]
 
-        node_messages = nnx.vmap(self.node_scaling)(node_sender_features)
+        node_messages = jax.vmap(self.node_scaling)(node_sender_features)
 
         scaled_node_messages = node2hedge_convolution * node_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
                               node2hedge_receivers)
 
-        output = gathered_scaling * gathered_messages
+        output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output
 

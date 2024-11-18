@@ -1,5 +1,5 @@
 
-from flax import nnx
+import equinox as eqx
 import jax.numpy as jnp
 import jax
 import optax
@@ -46,8 +46,7 @@ hgraph_sample = train_set[0]
 _, n_node_features_in = hgraph_sample.node_features.shape
 _, n_hedge_features_in = hgraph_sample.hedge_features.shape
 
-# key = jax.random.PRNGKey(42)
-rngs = nnx.Rngs(42)
+key = jax.random.PRNGKey(42)
 
 conv_layers = [{'n_node_in': n_node_features_in,
            'n_hedge_in': n_hedge_features_in,
@@ -70,13 +69,13 @@ hedge_layers = [{'n_hedge_in': 30},
                  'n_hedge_out': 1}]
 
 model = HyperGraphConvolution(
-            rngs = rngs,
+            key = key,
             conv_layers = conv_layers,
             node_layers = node_layers,
             hedge_layers = hedge_layers
         )
 
-nnx.display(model)
+print(model)
 
 energy = model(hgraph_sample)
 

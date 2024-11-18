@@ -1,15 +1,14 @@
 
 from typing import Optional
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
-# import equinox as eqx
-from flax import nnx
 
 from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
 
-class HyperGraphLayer(nnx.Module):
+class HyperGraphLayer(eqx.Module):
 
     r"""
     This module represents a layer of HyperGraph node-hedge combined convolution, in 
@@ -26,7 +25,7 @@ class HyperGraphLayer(nnx.Module):
     HedgeConv: HedgeConvolution
 
     def __init__(self,
-            rngs: nnx.Rngs,
+            key: jax.Array,
             n_node_in: int,
             n_hedge_in: int,
             n_node_out: Optional[int] = None,
@@ -44,7 +43,7 @@ class HyperGraphLayer(nnx.Module):
            activation: element-wise activation function, default = jnp.tanh
         """
 
-        # key_nodes, key_hedges = jax.random.split(key)
+        key_nodes, key_hedges = jax.random.split(key)
 
         if n_node_out is None: n_node_out = n_node_in
         if n_hedge_out is None: n_hedge_out = n_hedge_in
@@ -58,17 +57,17 @@ class HyperGraphLayer(nnx.Module):
         # for the moment this is hard-coded as jnp.tanh()
 
         self.NodeConv = NodeConvolution(
-            rngs,
-            n_node_in,
-            n_hedge_in,
-            n_node_out
+            key = key_nodes,
+            n_node_features_in = n_node_in,
+            n_hedge_features = n_hedge_in,
+            n_node_features_out = n_node_out
         )
 
         self.HedgeConv = HedgeConvolution(
-            rngs,
-            n_hedge_in,
-            n_node_out,
-            n_hedge_out
+            key = key_hedges,
+            n_hedge_features_in = n_hedge_in,
+            n_node_features = n_node_out,
+            n_hedge_features_out = n_hedge_out
         ) 
 
     def __call__(self,
@@ -99,23 +98,19 @@ class HyperGraphLayer(nnx.Module):
 
         # first convolve nodes
 
-        c_node_features = self.NodeConv(
+        new_node_features = self.NodeConv(
             node_features,
             hedge_features,
             hgraph_data
         )
 
-        new_node_features = jnp.tanh(c_node_features)
-
         # then convolve hedges
  
-        c_hedge_features = self.HedgeConv(
+        new_hedge_features = self.HedgeConv(
             new_node_features,
             hedge_features,
             hgraph_data
         )
-
-        new_hedge_features = jnp.tanh(c_hedge_features)
 
         return new_node_features, new_hedge_features
 

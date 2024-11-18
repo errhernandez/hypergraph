@@ -1,12 +1,12 @@
 
-from flax import nnx
+import equinox as eqx
 import jax.numpy as jnp
 from optax.losses import l2_loss
 
 from hypergraph import HyperGraph
 
 def loss_function(
-         model: nnx.Module,
+         model: eqx.Module,
          hgraph: HyperGraph,
          target_key: str = 'U0') -> float:
 

@@ -8,6 +8,7 @@ import pdb
 import re
 import sys
 
+import equinox as eqx
 from flax import nnx
 import jax.numpy as jnp
 import jax
@@ -131,7 +132,7 @@ test_dl = HyperGraphDataLoader(test_dataset)
 
 # now read model details and create it 
 
-rngs = nnx.Rngs(42)
+key = jax.random.PRNGKey(42)
 convolution_layers = input_data["convolution_layers"]
 
 # the first convolution layer has its input determined by the node and hedge 
@@ -145,7 +146,7 @@ hedge_MLP = input_data["hedge_MLP"]
 node_MLP = input_data["node_MLP"]
 
 model = HyperGraphConvolution(
-            rngs = rngs,
+            key = key,
             conv_layers = convolution_layers,
             node_layers = node_MLP,
             hedge_layers = hedge_MLP
@@ -174,8 +175,6 @@ if load_model:
    else: # file specified and exists, so call model_restore function
 
       model = restore_model(checkpoint_file, model)
-"""
-      
 
 # define and display an optimizer
 
@@ -183,6 +182,10 @@ optimizer = nnx.Optimizer(model, optax.adam(learning_rate, momentum))
 metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
+
+"""
+
+optimizer = optax.adam(learning_rate, momentum)
 
 # train the model
 

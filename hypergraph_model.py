@@ -1,10 +1,11 @@
 
 from typing import Optional
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
-from flax import nnx
 
+from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
 from hypergraph_layer import HyperGraphLayer
 
@@ -13,10 +14,17 @@ r"""
    to result in a full HyperGraphConvolution module. 
 """
 
-class HyperGraphConvolution(nnx.Module):
+class HyperGraphConvolution(eqx.Module):
+
+    conv_layers: list
+    node_layers: list
+    hedge_layers: list
+    n_convolution_layers: int
+    n_node_layers: int
+    n_hedge_layers: int
 
     def __init__(self, 
-          rngs: nnx.Rngs,
+          key: jax.Array,
           conv_layers: list[dict],
           node_layers: list[dict],
           hedge_layers: list[dict]
@@ -25,7 +33,7 @@ class HyperGraphConvolution(nnx.Module):
         r"""
         Args: 
  
-          :rngs nnx.Rngs: parameter initialisation random seed
+          :key jax.Array: parameter initialisation random seed
  
           :conv_layers list[dict]: a list of dictionaries, one dict for each
                HyperGraphLayer; each dict must have two mandatory keys, 
@@ -47,6 +55,18 @@ class HyperGraphConvolution(nnx.Module):
                
         """
 
+        # set random seeds for each  layer in the convolution
+
+        conv_key, node_key, hedge_key = jax.random.split(key, 3)
+
+        n_convolution = len(conv_layers)
+        n_node_MLP = len(node_layers)
+        n_hedge_MLP = len(hedge_layers)
+
+        convolution_keys = jax.random.split(conv_key, n_convolution)
+        node_MLP_keys = jax.random.split(node_key, n_node_MLP)
+        hedge_MLP_keys = jax.random.split(hedge_key, n_hedge_MLP)
+
         # first set-up the hyper-graph convolution layers
 
         self.conv_layers = []
@@ -67,7 +87,7 @@ class HyperGraphConvolution(nnx.Module):
                n_hedge_out = n_hedge_in
  
             self.conv_layers.append( HyperGraphLayer(
-                  rngs = rngs,
+                  key = convolution_keys[n],
                   n_node_in = n_node_in, 
                   n_hedge_in = n_hedge_in,
                   n_node_out = n_node_out,
@@ -94,7 +114,6 @@ class HyperGraphConvolution(nnx.Module):
         else:
            n_hedge_in = last_layer['n_hedge_in']
 
-        self.n_node_layers = len(node_layers)
         self.node_layers = []
 
         for n, layer in enumerate(node_layers):
@@ -105,16 +124,13 @@ class HyperGraphConvolution(nnx.Module):
                 n_node_out = n_node_in
 
             self.node_layers.append(
-                 nnx.vmap(
-                          nnx.Linear(in_features = n_node_in,
+                          eqx.nn.Linear(in_features = n_node_in,
                                      out_features = n_node_out,
-                                     rngs = rngs),
-                          in_axes = 0,
-                          out_axes = 0
-                         )
+                                     key = node_MLP_keys[n])
                                    )
 
-        self.n_hedge_layers = len(hedge_layers)
+        self.n_node_layers = len(self.node_layers)
+
         self.hedge_layers = []
 
         for n, layer in enumerate(hedge_layers):
@@ -125,15 +141,12 @@ class HyperGraphConvolution(nnx.Module):
                 n_hedge_out = n_hedge_in
 
             self.hedge_layers.append(
-                 nnx.vmap(
-                          nnx.Linear(in_features = n_hedge_in,
+                          eqx.nn.Linear(in_features = n_hedge_in,
                                      out_features = n_hedge_out,
-                                     rngs = rngs),
-                          in_axes = 0,
-                          out_axes = 0
-                         )
+                                     key = hedge_MLP_keys[n])
                                     )
 
+        self.n_hedge_layers = len(self.hedge_layers)
 
     def __call__(self,
           hgraph: HyperGraph
@@ -154,7 +167,7 @@ class HyperGraphConvolution(nnx.Module):
 
         for n, layer in enumerate(self.node_layers):
 
-            node_features = layer(node_features)
+            node_features = jax.vmap(layer)(node_features)
 
             if n < self.n_node_layers:
 
@@ -167,7 +180,7 @@ class HyperGraphConvolution(nnx.Module):
 
         for n, layer in enumerate(self.hedge_layers):
 
-            hedge_features = layer(hedge_features)
+            hedge_features = jax.vmap(layer)(hedge_features)
            
             if n < self.n_hedge_layers:
 
