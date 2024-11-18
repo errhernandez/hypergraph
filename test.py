@@ -21,17 +21,17 @@ test_set = HyperGraphDataSet(database_dir = test_path)
 train_dl = HyperGraphDataLoader(dataset = train_set, batch_size=1)
 test_dl = HyperGraphDataLoader(dataset = test_set)
 
-species_list = ['H', 'C', 'N', 'O', 'F']
-node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
-                   'en_pauling', 'group']
+# species_list = ['H', 'C', 'N', 'O', 'F']
+# node_feature_list = ['atomic_number', 'covalent_radius', 'vdw_radius', 'electron_affinity',
+#                    'en_pauling', 'group']
 
-GM = QM9CovalentHyperGraphs(species_list=species_list,
-                            node_feature_list=node_feature_list,
-                            n_hedge_features=10)
+# GM = QM9CovalentHyperGraphs(species_list=species_list,
+#                             node_feature_list=node_feature_list,
+#                             n_hedge_features=10)
 
-file = '../Databases/QM9DataBase/train/dsgdb9nsd_129158.xyz'
+# file = '../Databases/QM9DataBase/train/dsgdb9nsd_129158.xyz'
 
-hgraph = GM.structure2graph(file)
+# hgraph = GM.structure2graph(file)
 
 # _, n_node_features = hgraph.node_features.shape
 # _, n_hedge_features = hgraph.hedge_features.shape
@@ -41,7 +41,7 @@ hgraph = GM.structure2graph(file)
 # in order to define the model, we need to specify how many node and hedge features these
 # hypergraphs have, so get an example and interrogate it
 
-hgraph_sample = train_set.get(0)
+hgraph_sample = train_set[0]
 
 _, n_node_features_in = hgraph_sample.node_features.shape
 _, n_hedge_features_in = hgraph_sample.hedge_features.shape
@@ -78,6 +78,11 @@ model = HyperGraphConvolution(
 
 nnx.display(model)
 
+energy = model(hgraph_sample)
+
+print(f'energy = {energy}')
+
+"""
 learning_rate = 0.005
 momentum = 0.9
 
@@ -101,3 +106,4 @@ for n, sample in enumerate(test_dl):
     print(f'Loss for sample {n}: {loss}')
 
 print('Got here!')
+"""

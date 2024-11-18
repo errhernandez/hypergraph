@@ -2,15 +2,16 @@
 from typing import Callable
 
 from flax import nnx
+from torch.utils.tensorboard import SummaryWriter
 
 from hypergraph import HyperGraph
+from hypergraph_dataloader import HyperGraphDataLoader
 from hypergraph_model import HyperGraphConvolution
 
 def train_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
         optimizer: nnx.Optimizer,
-        metrics: nnx.MultiMetric,
         batch: HyperGraph
     ) -> float:
     """Implement a single step of training"""
@@ -19,7 +20,6 @@ def train_step(
 
     loss, grads = grad_fn(model, batch)
 
-    metrics.update(loss=loss)
     optimizer.update(grads)
 
     return loss
@@ -27,12 +27,57 @@ def train_step(
 def eval_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
-        metrics: nnx.MultiMetric,
         batch: HyperGraph
     ) -> float:
 
     loss = loss_fn(model, batch)
 
-    metrics.update(loss=loss)
-
     return loss
+
+"""Centralises the model parameter optimisation process. """
+
+def train_model(
+      n_epochs: int,
+      model: nnx.Module,
+      loss_func: Callable,
+      optimizer: nnx.Optimizer, 
+      train_dl: HyperGraphDataLoader,
+      valid_dl: HyperGraphDataLoader,
+      n_epoch_0: int = 0,
+      n_print: int = 1,
+      writer: SummaryWriter = None
+		) -> None:
+
+   print("epoch-run/epoch      train-loss      validation-loss")
+   print("----------------------------------------------------")
+ 
+   # model.train()  I don't think this is necessary in nnx
+
+   for epoch in range(n_epochs):
+
+       n_epoch = n_epoch_0 + epoch
+
+       train_running_loss = 0.0
+       validation_running_loss = 0.0
+
+       for batch in train_dl:
+           loss = train_step(model, loss_func, optimizer, batch)
+           train_running_loss += loss
+
+       for batch in valid_dl:
+           loss = eval_step(model, loss_func, batch)
+           validation_running_loss += loss
+       
+       if epoch % n_print == 0:
+    
+          txt = f'{n_epoch}/{epoch}   train-loss: {train_running_loss}'
+          txt += f'   validation-loss: {validation_running_loss}' 
+          print(txt)
+
+       if writer is not None:
+          writer.add_scalar("Training Loss", \
+                            float(train_running_loss), n_epoch)
+          writer.add_scalar("Validation Loss", \
+                            float(validation_running_loss), n_epoch)
+                       
+       # below we will have to implement checkpointing and callbacks and all that

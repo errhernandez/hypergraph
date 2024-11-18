@@ -26,7 +26,7 @@ from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_dataloader import HyperGraphDataLoader
 from loss_function import loss_function
 from run_banner import run_banner
-from training import train_step, eval_step
+from training import train_model
 
 """
 A driver script to fit a Graph Convolutional Neural Network GCNN model to
@@ -116,6 +116,7 @@ test_dataset = HyperGraphDataSet(files = test_list)
 # read some parameters for optimisation 
 
 n_epochs = input_data.get("n_epochs", 100)
+n_print = input_data.get("n_print", 1) 
 train_batch_size = input_data.get("training_batch_size", 50)
 valid_batch_size = input_data.get("validation_batch_size", 10)
 n_checkpoint_freq = input_data.get("n_checkpoint_freq", 10)
@@ -150,19 +151,31 @@ model = HyperGraphConvolution(
             hedge_layers = hedge_MLP
         ) 
 
-"""
-print('Energies of train set')
-for n, sample in enumerate(train_dl):
-    loss = loss_function(model, sample, 'U0')
-    print(f'Loss for sample {n}: {loss}')
+# check if we are loading model parameters from a previous checkpoint
 
-print('Energies of test set')
-for n, sample in enumerate(test_dl):
-    loss = loss_function(model, sample, 'U0')
-    print(f'Loss for sample {n}: {loss}')
-
-print('Got this far!')
 """
+load_model = input_data.get("load_model", False)
+
+if load_model:
+
+   checkpoint_file = input_data.get("load_model_file", None)
+
+   if checkpoint_file is None:
+
+      print(f'For a re-start optimisation job you must provide a state file!')
+      print(f'Use command load_model_file to do so')
+      sys.exit()
+
+   elif not os.path.exists(checkpoint_file):
+
+      print(f'Re-start file does not exist!')
+      sys.exit()
+
+   else: # file specified and exists, so call model_restore function
+
+      model = restore_model(checkpoint_file, model)
+"""
+      
 
 # define and display an optimizer
 
@@ -171,34 +184,21 @@ metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
 
-# nnx.display(optimizer)
+# train the model
 
-metrics_history = {
-        'train_loss': [],
-        'valid_loss': []
-        }
+n_start = 0 # when we learn how to restart this will change
 
-print("epoch      train-loss      validation-loss")
-print("------------------------------------------")
-
-for epoch in range(n_epochs):
-    
-    running_loss = 0.0
-    validation_running_loss = 0.0
-
-    for batch in train_dl:
-        loss = train_step(model, loss_function, optimizer, metrics, batch)
-        running_loss += loss
-
-    for batch in valid_dl:
-        loss = eval_step(model, loss_function, metrics, batch)
-        validation_running_loss += loss
-
-    print(f'epoch: {epoch}, running_loss: {running_loss}, validation_running_loss: {validation_running_loss}')
-
-    if writer is not None:
-        writer.add_scalar("Training Loss", float(running_loss), epoch)
-        writer.add_scalar("Validation Loss", float(validation_running_loss), epoch)
+train_model(
+    n_epochs = n_epochs, 
+    model = model,
+    loss_func = loss_function,
+    optimizer = optimizer,
+    train_dl = train_dl,
+    valid_dl = valid_dl,
+    n_epoch_0 = n_start,
+    n_print = n_print,
+    writer = writer
+	   )
     
 # let's try now with the test set
 
