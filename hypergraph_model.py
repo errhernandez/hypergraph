@@ -167,10 +167,12 @@ class HyperGraphConvolution(eqx.Module):
 
         for n, layer in enumerate(self.node_layers):
 
+            # node_features = jax.jit(jax.vmap(layer))(node_features)
             node_features = jax.vmap(layer)(node_features)
 
             if n < self.n_node_layers:
 
+               # node_features = jax.jit(jnp.tanh)(node_features)
                node_features = jnp.tanh(node_features)
 
         node_energy = jax.ops.segment_sum(
@@ -180,10 +182,12 @@ class HyperGraphConvolution(eqx.Module):
 
         for n, layer in enumerate(self.hedge_layers):
 
+            # hedge_features = jax.jit(jax.vmap(layer))(hedge_features)
             hedge_features = jax.vmap(layer)(hedge_features)
            
             if n < self.n_hedge_layers:
 
+               # hedge_features = jax.jit(jnp.tanh)(hedge_features)
                hedge_features = jnp.tanh(hedge_features)
 
         hedge_energy = jax.ops.segment_sum(

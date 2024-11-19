@@ -176,26 +176,26 @@ if load_model:
 
       model = restore_model(checkpoint_file, model)
 
-# define and display an optimizer
+# define and display an optimiser
 
-optimizer = nnx.Optimizer(model, optax.adam(learning_rate, momentum))
+optimiser = nnx.Optimizer(model, optax.adam(learning_rate, momentum))
 metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
 
 """
 
-optimizer = optax.adam(learning_rate, momentum)
+optimiser = optax.adam(learning_rate, momentum)
 
 # train the model
 
 n_start = 0 # when we learn how to restart this will change
 
-train_model(
+final_model = train_model(
     n_epochs = n_epochs, 
     model = model,
     loss_func = loss_function,
-    optimizer = optimizer,
+    optimiser = optimiser,
     train_dl = train_dl,
     valid_dl = valid_dl,
     n_epoch_0 = n_start,
@@ -205,7 +205,7 @@ train_model(
     
 # let's try now with the test set
 
-model.eval()
+# final_model.eval()
 
 print("         TEST SAMPLE ENERGIES             ")
 print("------------------------------------------")
@@ -217,7 +217,7 @@ abslss = []
 
 for n, batch in enumerate(test_dl):
 
-    prediction = model(batch)
+    prediction = final_model(batch)
     ground_truth = jnp.array(batch.targets['U0'])
     prediction = prediction[0,0]
     ground_truth = ground_truth[0,0]

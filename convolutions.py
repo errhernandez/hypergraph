@@ -95,6 +95,7 @@ class NodeConvolution(eqx.Module):
 
         sender_features = node_features[node_senders]
 
+        # messages = jax.jit(jax.vmap(self.node_message))(sender_features)
         messages = jax.vmap(self.node_message)(sender_features)
 
         scaled_messages = node_convolution * messages
@@ -106,13 +107,17 @@ class NodeConvolution(eqx.Module):
 
         hedge_sender_features = hedge_features[hedge2node_senders]
 
-        hedge_messages = jax.vmap(self.hedge_scaling)(hedge_sender_features)
+        # hedge_messages = jax.jit(
+        #           jax.vmap(self.hedge_scaling))(hedge_sender_features)
+        hedge_messages = \
+                  jax.vmap(self.hedge_scaling)(hedge_sender_features)
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
                               hedge2node_receivers)
 
+        # output = jax.jit(jnp.tanh)(gathered_scaling * gathered_messages)
         output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output
@@ -202,6 +207,9 @@ class HedgeConvolution(eqx.Module):
 
         sender_features = hedge_features[hedge_senders]
 
+        # messages = jax.jit(
+        #                jax.vmap(self.hedge_message)
+        #                   )(sender_features)
         messages = jax.vmap(self.hedge_message)(sender_features)
 
         scaled_messages = hedge_adjacency * messages
@@ -213,6 +221,9 @@ class HedgeConvolution(eqx.Module):
 
         node_sender_features = node_features[node2hedge_senders]
 
+        # node_messages = jax.jit(
+        #                     jax.vmap(self.node_scaling)
+        #                        )(node_sender_features)
         node_messages = jax.vmap(self.node_scaling)(node_sender_features)
 
         scaled_node_messages = node2hedge_convolution * node_messages
@@ -220,6 +231,7 @@ class HedgeConvolution(eqx.Module):
         gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
                               node2hedge_receivers)
 
+        # output = jax.jit(jnp.tanh)(gathered_scaling * gathered_messages)
         output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output

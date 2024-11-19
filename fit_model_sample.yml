@@ -1,6 +1,6 @@
 
 # set to True for a debug run
-debug: True
+# debug: True
 
 # set a directory and file name for the log-file for this run
 
@@ -15,11 +15,11 @@ log_message: 'Hello, HyperGraphs of the World, unite!'
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 20
-n_test_max: 10
-train_validation_fraction: 0.5
-training_batch_size: 2
-validation_batch_size: 2
+n_training_max: 5000
+n_test_max: 1000
+train_validation_fraction: 0.3
+training_batch_size: 50
+validation_batch_size: 50
 
 # In the following we define the hypergraph convolution model, which has three parts, namely:
 # 1) we start by giving a PRNGKey (an integer) for parameter initialisation
