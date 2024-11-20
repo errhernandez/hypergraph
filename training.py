@@ -37,6 +37,9 @@ def train_step(
     updates, opt_state = jax.jit(optimiser.update)(
         grads, opt_state, eqx.filter(model, eqx.is_array)
     )
+    # updates, opt_state = optimiser.update(
+    #     grads, opt_state, eqx.filter(model, eqx.is_array)
+    #)
     
     model = jax.jit(eqx.apply_updates)(model, updates)
 

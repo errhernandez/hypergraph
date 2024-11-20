@@ -121,7 +121,13 @@ n_print = input_data.get("n_print", 1)
 train_batch_size = input_data.get("training_batch_size", 50)
 valid_batch_size = input_data.get("validation_batch_size", 10)
 n_checkpoint_freq = input_data.get("n_checkpoint_freq", 10)
+
+# following parameters pertain to the Optax "reduce_on_plateau" learning-rate scheduler 
 learning_rate = input_data.get("learning_rate", 1.0e-2)
+lr_reduction_factor = input_data.get("lr_reduction_factor", 1.0e-1)
+lr_patience = input_data.get("lr_patience", 10)
+lr_rtol = input_data.get("lr_rtol", 1.0e-4)
+lr_atol = input_data.get("lr_atol", 1.0e-5)
 momentum = input_data.get("momentum", 0.9)
 
 # create dataloaders for each dataset
@@ -183,9 +189,23 @@ metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
 
+
+scheduler = optax.contrib.reduce_on_plateau(
+                  factor = lr_reduction_factor,
+                  patience = lr_patience,
+                  rtol = lr_rtol,
+                  atol = lr_atol
+                  )
 """
 
-optimiser = optax.adam(learning_rate, momentum)
+scheduler = optax.schedules.linear_schedule(
+                  init_value = learning_rate,
+                  end_value = (0.01 * learning_rate),
+                  transition_steps = n_epochs,
+                  transition_begin = 80
+		)
+
+optimiser = optax.adam(learning_rate=scheduler)
 
 # train the model
 
