@@ -8,6 +8,10 @@ log_dir: '../test_runs/'
 log_file: 'test_run' # don't use a file extension; '.log' will be added automatically
 # the actual file name will be appended with a time string in the directory log_dir
 
+checkpoint_dir: '../test_checkpoints/' # directory where checkpoints will be written
+# checkpoints will be named checkpoint_'timestring'.js where timestring is date & time
+# when the job was run
+
 # a log message for the run
 log_message: 'Hello, HyperGraphs of the World, unite!'
 
@@ -72,7 +76,11 @@ node_MLP:
       
 # define the training step
 
-n_epochs: 10
-n_print: 1 # frequency of training/validation loss output
+n_epochs: 100
+n_print: 10 # frequency of training/validation loss output
 n_checkpoint_freq: 10
-learning_rate: 1.0e-2
+learning_rate: 1.5e-2
+lr_reduction_factor: 0.1
+lr_patience: 10
+lr_rtol: 1.0e-4
+lr_atol: 1.0e-5

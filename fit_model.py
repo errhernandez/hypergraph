@@ -21,6 +21,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 import yaml
 
+from checkpointing import checkpoint_load, checkpoint_save
 from hypergraph_batch import hypergraph_batch
 from hypergraph_model import HyperGraphConvolution 
 from hypergraph_dataset import HyperGraphDataSet
@@ -58,6 +59,8 @@ time_string = datetime.now().strftime("%d%m%Y-%H%M%S")
 log_dir = input_data.get("log_dir", './runs/')
 log_file_str = input_data.get("log_file", 'test_run')
 log_file = log_dir + log_file_str + '_' + time_string + '.log'
+checkpoint_dir = input_data.get("checkpoint_dir", './checkpoints/')
+checkpoint_file = checkpoint_dir + 'checkpoint_' + time_string + '.js'
 
 if not os.path.exists(log_dir):  # check if we need to create the log dir
     log_path = pathlib.Path(log_dir)
@@ -117,6 +120,7 @@ test_dataset = HyperGraphDataSet(files = test_list)
 # read some parameters for optimisation 
 
 n_epochs = input_data.get("n_epochs", 100)
+n_start = input_data.get("n_start", 0)
 n_print = input_data.get("n_print", 1) 
 train_batch_size = input_data.get("training_batch_size", 50)
 valid_batch_size = input_data.get("validation_batch_size", 10)
@@ -158,37 +162,40 @@ model = HyperGraphConvolution(
             hedge_layers = hedge_MLP
         ) 
 
+hyperparams = {'conv_layers': convolution_layers,
+               'node_layers': node_MLP,
+               'hedge_layers': hedge_MLP}
+
 # check if we are loading model parameters from a previous checkpoint
 
-"""
 load_model = input_data.get("load_model", False)
 
 if load_model:
 
-   checkpoint_file = input_data.get("load_model_file", None)
+   restart_file = input_data.get("load_model_file", None)
 
-   if checkpoint_file is None:
+   if restart_file is None:
 
       print(f'For a re-start optimisation job you must provide a state file!')
       print(f'Use command load_model_file to do so')
       sys.exit()
 
-   elif not os.path.exists(checkpoint_file):
+   elif not os.path.exists(restart_file):
 
       print(f'Re-start file does not exist!')
       sys.exit()
 
    else: # file specified and exists, so call model_restore function
 
-      model = restore_model(checkpoint_file, model)
+      model = checkpoint_load(restart_file)
 
+"""
 # define and display an optimiser
 
 optimiser = nnx.Optimizer(model, optax.adam(learning_rate, momentum))
 metrics = nnx.MultiMetric(
     loss = nnx.metrics.Average('loss')
 )
-
 
 scheduler = optax.contrib.reduce_on_plateau(
                   factor = lr_reduction_factor,
@@ -209,17 +216,18 @@ optimiser = optax.adam(learning_rate=scheduler)
 
 # train the model
 
-n_start = 0 # when we learn how to restart this will change
-
 final_model = train_model(
     n_epochs = n_epochs, 
     model = model,
+    hyperparameters = hyperparams,
     loss_func = loss_function,
     optimiser = optimiser,
     train_dl = train_dl,
     valid_dl = valid_dl,
     n_epoch_0 = n_start,
     n_print = n_print,
+    checkpoint_file = checkpoint_file,
+    n_checkpoint_freq = n_checkpoint_freq,
     writer = writer
 	   )
     

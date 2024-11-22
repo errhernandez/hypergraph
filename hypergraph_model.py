@@ -9,6 +9,10 @@ from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
 from hypergraph_layer import HyperGraphLayer
 
+def builder(*, key, conv_layers, node_layers, hedge_layers) -> eqx.Module:
+
+    return HyperGraphConvolution(key, conv_layers, node_layers, hedge_layers)
+
 r"""
    This class combines an arbitrary number of HyperGraphLayer modules
    to result in a full HyperGraphConvolution module. 

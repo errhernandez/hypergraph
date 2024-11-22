@@ -7,6 +7,7 @@ from jaxtyping import PyTree
 import optax
 from torch.utils.tensorboard import SummaryWriter
 
+from checkpointing import checkpoint_save
 from hypergraph import HyperGraph
 from hypergraph_dataloader import HyperGraphDataLoader
 from hypergraph_model import HyperGraphConvolution
@@ -60,12 +61,15 @@ def eval_step(
 def train_model(
       n_epochs: int,
       model: eqx.Module,
+      hyperparameters: dict,
       loss_func: Callable,
       optimiser: optax.GradientTransformation,
       train_dl: HyperGraphDataLoader,
       valid_dl: HyperGraphDataLoader,
-      n_epoch_0: int = 0,
-      n_print: int = 1,
+      n_epoch_0: int,
+      n_print: int,
+      checkpoint_file: str,
+      n_checkpoint_freq: int, 
       writer: SummaryWriter = None
 		) -> eqx.Module:
 
@@ -92,12 +96,15 @@ def train_model(
        for batch in valid_dl:
            loss = eval_step(model, loss_func, batch)
            validation_running_loss += loss
-       
+
        if epoch % n_print == 0:
     
           txt = f'{n_epoch}/{epoch}   train-loss: {train_running_loss}'
           txt += f'   validation-loss: {validation_running_loss}' 
           print(txt)
+
+       if epoch % n_checkpoint_freq == 0:
+          checkpoint_save(checkpoint_file, hyperparameters, model)
 
        if writer is not None:
           writer.add_scalar("Training Loss", \

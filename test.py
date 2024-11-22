@@ -3,10 +3,12 @@ import equinox as eqx
 import jax.numpy as jnp
 import jax
 import optax
+import orbax.checkpoint
 
+from checkpointing import checkpoint_save, checkpoint_load
 from hypergraph_dataloader import HyperGraphDataLoader
 from hypergraph_dataset import HyperGraphDataSet
-from hypergraph_model import HyperGraphConvolution
+from hypergraph_model import builder, HyperGraphConvolution
 from loss_function import loss_function
 from QM9_covalent_hypergraphs import QM9CovalentHyperGraphs
 
@@ -68,18 +70,32 @@ hedge_layers = [{'n_hedge_in': 30},
                 {'n_hedge_in': 30,
                  'n_hedge_out': 1}]
 
-model = HyperGraphConvolution(
+hyperparams = {'conv_layers': conv_layers,
+               'node_layers': node_layers,
+               'hedge_layers': hedge_layers}
+model = builder(
             key = key,
-            conv_layers = conv_layers,
-            node_layers = node_layers,
-            hedge_layers = hedge_layers
+            **hyperparams
         )
 
 print(model)
 
 energy = model(hgraph_sample)
 
-print(f'energy = {energy}')
+print(f'energy before = {energy}')
+
+# now save the model parameters
+
+path = 'checkpoints/checkpoint.js'
+
+checkpoint_save(path, hyperparams, model)
+
+new_model = checkpoint_load(path)
+
+new_energy = new_model(hgraph_sample)
+
+print(f'energy after = {new_energy}')
+
 
 """
 learning_rate = 0.005
