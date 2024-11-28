@@ -22,7 +22,8 @@ from torch.utils.tensorboard import SummaryWriter
 import yaml
 
 from checkpointing import checkpoint_load, checkpoint_save
-from hypergraph_batch import hypergraph_batch
+# from hypergraph_batch import hypergraph_batch
+from hypergraph_batching import HyperGraphBatching
 from hypergraph_model import HyperGraphConvolution 
 from hypergraph_dataset import HyperGraphDataSet
 from hypergraph_dataloader import HyperGraphDataLoader
@@ -66,16 +67,6 @@ if not os.path.exists(log_dir):  # check if we need to create the log dir
     log_path = pathlib.Path(log_dir)
     log_path.mkdir()
 
-# create an instance of SummaryWriter for logging purposes
-
-writer = SummaryWriter(log_file)
-
-banner = run_banner(time_string)
-print(banner) # print it also to standard output
-banner = markdown.markdown(banner)
-
-writer.add_text("Banner", banner)
-
 # path to the input data base
 
 database_path = input_data.get("database", "../Databases/QM9ERHGraphDatabase/")
@@ -100,7 +91,8 @@ n_test_max = input_data.get("n_test_max", None)
 train_validation_fraction = input_data.get("train_validation_fraction", 0.3)
 
 train_list, valid_list = train_test_split(train_files,
-                              test_size=train_validation_fraction)
+                              test_size=train_validation_fraction,
+                              random_state = 0)
 
 if n_training_max is None or n_training_max > len(train_list):
     train_dataset = HyperGraphDataSet(files = train_list)
@@ -136,9 +128,31 @@ momentum = input_data.get("momentum", 0.9)
 
 # create dataloaders for each dataset
 
-train_dl = HyperGraphDataLoader(train_dataset, batch_size = train_batch_size)
-valid_dl = HyperGraphDataLoader(valid_dataset, batch_size = valid_batch_size)
-test_dl = HyperGraphDataLoader(test_dataset)
+train_batching = HyperGraphBatching(
+                    dataset = train_dataset,
+                    batch_size = train_batch_size 
+		)
+
+train_dl = train_batching.dataloader()
+
+n_nodes_batch, n_hedges_batch = train_batching.batch_sizes()
+
+valid_batching = HyperGraphBatching(
+                    dataset = valid_dataset,
+                    batch_size = valid_batch_size 
+		)
+
+valid_dl = valid_batching.dataloader()
+
+test_batching = HyperGraphBatching(
+                    dataset = test_dataset,
+                    batch_size = 1 
+		)
+
+test_dl = test_batching.dataloader()
+# train_dl = HyperGraphDataLoader(train_dataset, batch_size = train_batch_size)
+# valid_dl = HyperGraphDataLoader(valid_dataset, batch_size = valid_batch_size)
+# test_dl = HyperGraphDataLoader(test_dataset)
 
 # now read model details and create it 
 
@@ -159,7 +173,10 @@ model = HyperGraphConvolution(
             key = key,
             conv_layers = convolution_layers,
             node_layers = node_MLP,
-            hedge_layers = hedge_MLP
+            hedge_layers = hedge_MLP,
+            n_batch = train_batch_size,
+            n_nodes_batch = n_nodes_batch,
+            n_hedges_batch = n_hedges_batch
         ) 
 
 hyperparams = {'conv_layers': convolution_layers,
@@ -213,6 +230,20 @@ scheduler = optax.schedules.linear_schedule(
 		)
 
 optimiser = optax.adam(learning_rate=scheduler)
+
+# create an instance of SummaryWriter for logging purposes
+
+writer = SummaryWriter(log_file)
+
+banner = run_banner(time_string)
+print(banner) # print it also to standard output
+banner = markdown.markdown(banner)
+
+writer.add_text("Banner", banner)
+
+print(model)
+model_description = markdown.markdown(repr(model))
+writer.add_text("Model", model_description)
 
 # train the model
 

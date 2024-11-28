@@ -22,9 +22,11 @@ class NodeConvolution(eqx.Module):
 
     node_message: eqx.nn.Linear
     hedge_scaling: eqx.nn.Linear
+    n_max_nodes: int
 
     def __init__(self,
             key: jax.Array,
+            n_max_nodes: int,
             n_node_features_in: int,
             n_hedge_features: int,
             n_node_features_out: Optional[int] = None,
@@ -41,6 +43,8 @@ class NodeConvolution(eqx.Module):
         """
 
         key1, key2 = jax.random.split(key,2)
+ 
+        self.n_max_nodes = n_max_nodes
 
         if n_node_features_out is None: 
            n_node_features_out = n_node_features_in
@@ -95,29 +99,27 @@ class NodeConvolution(eqx.Module):
 
         sender_features = node_features[node_senders]
 
-        # messages = jax.jit(jax.vmap(self.node_message))(sender_features)
         messages = jax.vmap(self.node_message)(sender_features)
 
         scaled_messages = node_convolution * messages
 
         gathered_messages = jax.ops.segment_sum(scaled_messages,
-                               node_receivers)
+                                       node_receivers,
+                                       num_segments = self.n_max_nodes)
 
         # now use hedge embeddings to co-embed node embeddings
 
         hedge_sender_features = hedge_features[hedge2node_senders]
 
-        # hedge_messages = jax.jit(
-        #           jax.vmap(self.hedge_scaling))(hedge_sender_features)
         hedge_messages = \
                   jax.vmap(self.hedge_scaling)(hedge_sender_features)
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
-                              hedge2node_receivers)
+                                       hedge2node_receivers,
+                                       num_segments = self.n_max_nodes)
 
-        # output = jax.jit(jnp.tanh)(gathered_scaling * gathered_messages)
         output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output
@@ -135,9 +137,11 @@ class HedgeConvolution(eqx.Module):
 
     hedge_message: eqx.nn.Linear
     node_scaling: eqx.nn.Linear
+    n_max_hedges: int
 
     def __init__(self,
             key: jax.Array,
+            n_max_hedges: int,
             n_hedge_features_in: int,
             n_node_features: int,
             n_hedge_features_out: Optional[int] = None
@@ -154,6 +158,8 @@ class HedgeConvolution(eqx.Module):
         """
 
         key1, key2 = jax.random.split(key, 2)
+
+        self.n_max_hedges = n_max_hedges
 
         if n_hedge_features_out is None:
            n_hedge_features_out = n_hedge_features_in
@@ -207,31 +213,26 @@ class HedgeConvolution(eqx.Module):
 
         sender_features = hedge_features[hedge_senders]
 
-        # messages = jax.jit(
-        #                jax.vmap(self.hedge_message)
-        #                   )(sender_features)
         messages = jax.vmap(self.hedge_message)(sender_features)
 
         scaled_messages = hedge_adjacency * messages
 
         gathered_messages = jax.ops.segment_sum(scaled_messages,
-                               hedge_receivers)
+                                       hedge_receivers,
+                                       num_segments = self.n_max_hedges)
 
         # now use node embeddings to co-embed node embeddings
 
         node_sender_features = node_features[node2hedge_senders]
 
-        # node_messages = jax.jit(
-        #                     jax.vmap(self.node_scaling)
-        #                        )(node_sender_features)
         node_messages = jax.vmap(self.node_scaling)(node_sender_features)
 
         scaled_node_messages = node2hedge_convolution * node_messages
 
         gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
-                              node2hedge_receivers)
+                                       node2hedge_receivers,
+                                       num_segments = self.n_max_hedges)
 
-        # output = jax.jit(jnp.tanh)(gathered_scaling * gathered_messages)
         output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output

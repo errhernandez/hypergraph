@@ -19,7 +19,7 @@ class HyperGraphDataSet(Dataset):
     def __init__(
         self,
         database_dir: str = None,
-        nMaxEntries: int = None,
+        n_max_entries: int = None,
         seed: int = 42,
         file_extension: str = '.pkl',
         files: Optional[list[str]] = None
@@ -31,7 +31,7 @@ class HyperGraphDataSet(Dataset):
 
         :param str database_dir: the directory where the data files reside
 
-        :param int nMaxEntries: optionally used to limit the number of clusters
+        :param int n_max_entries: optionally used to limit the number of clusters
                   to consider; default is all
 
         :param int seed: initialises the random seed for choosing randomly
@@ -42,7 +42,7 @@ class HyperGraphDataSet(Dataset):
         :param str file_extension: the extension of files in the database; default = .xyz
 
         :files list[str] (optional): by default, with database_dir and file_extension this
-                  class constructs a dataset with all the files (or nMaxEntries if not None)
+                  class constructs a dataset with all the files (or n_max_entries if not None)
                   contained in database_dir. It might be desirable however to split the files
                   into two datasets (e.g. training and validation); in this case, the user
                   must provide a list of filenames (full relative path). 
@@ -61,16 +61,16 @@ class HyperGraphDataSet(Dataset):
 
         """
         files contains a list of files, one for each item in
-        the database if nMaxEntries != None and is set to some integer
-        value less than n_structures, then nMaxEntries clusters are
+        the database if n_max_entries != None and is set to some integer
+        value less than n_structures, then n_max_entries clusters are
         selected randomly for use.
         """
 
-        if nMaxEntries and nMaxEntries < self.n_structures:
+        if n_max_entries and n_max_entries < self.n_structures:
 
-            self.n_structures = nMaxEntries
+            self.n_structures = n_max_entries
             random.seed(seed)
-            self.filenames = random.sample(files, nMaxEntries)
+            self.filenames = random.sample(files, n_max_entries)
 
         else:
 

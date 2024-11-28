@@ -9,9 +9,24 @@ from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
 from hypergraph_layer import HyperGraphLayer
 
-def builder(*, key, conv_layers, node_layers, hedge_layers) -> eqx.Module:
+def builder(*,
+            key,
+            conv_layers,
+            node_layers,
+            hedge_layers,
+            n_batch,
+            n_nodes_batch,
+            n_hedges_batch
+    ) -> eqx.Module:
 
-    return HyperGraphConvolution(key, conv_layers, node_layers, hedge_layers)
+    return HyperGraphConvolution(key,
+                conv_layers,
+                node_layers,
+                hedge_layers,
+                n_batch,
+                n_nodes_batch,
+                n_hedges_batch
+           )
 
 r"""
    This class combines an arbitrary number of HyperGraphLayer modules
@@ -26,12 +41,18 @@ class HyperGraphConvolution(eqx.Module):
     n_convolution_layers: int
     n_node_layers: int
     n_hedge_layers: int
+    n_batch: int
+    n_nodes_batch: int
+    n_hedges_batch: int
 
     def __init__(self, 
           key: jax.Array,
           conv_layers: list[dict],
           node_layers: list[dict],
-          hedge_layers: list[dict]
+          hedge_layers: list[dict],
+          n_batch,
+          n_nodes_batch: int,
+          n_hedges_batch: int
         ) -> None:
 
         r"""
@@ -58,6 +79,10 @@ class HyperGraphConvolution(eqx.Module):
                single number!
                
         """
+
+        self.n_batch = n_batch + 1
+        self.n_nodes_batch = n_nodes_batch
+        self.n_hedges_batch = n_hedges_batch
 
         # set random seeds for each  layer in the convolution
 
@@ -92,6 +117,8 @@ class HyperGraphConvolution(eqx.Module):
  
             self.conv_layers.append( HyperGraphLayer(
                   key = convolution_keys[n],
+                  n_max_nodes = self.n_nodes_batch,
+                  n_max_hedges = self.n_hedges_batch,
                   n_node_in = n_node_in, 
                   n_hedge_in = n_hedge_in,
                   n_node_out = n_node_out,
@@ -171,32 +198,30 @@ class HyperGraphConvolution(eqx.Module):
 
         for n, layer in enumerate(self.node_layers):
 
-            # node_features = jax.jit(jax.vmap(layer))(node_features)
             node_features = jax.vmap(layer)(node_features)
 
             if n < self.n_node_layers:
 
-               # node_features = jax.jit(jnp.tanh)(node_features)
                node_features = jnp.tanh(node_features)
 
         node_energy = jax.ops.segment_sum(
                           node_features,
                           segment_ids = hgraph.batch_node_index,
+                          num_segments = self.n_batch,
                           indices_are_sorted = True)
 
         for n, layer in enumerate(self.hedge_layers):
 
-            # hedge_features = jax.jit(jax.vmap(layer))(hedge_features)
             hedge_features = jax.vmap(layer)(hedge_features)
            
             if n < self.n_hedge_layers:
 
-               # hedge_features = jax.jit(jnp.tanh)(hedge_features)
                hedge_features = jnp.tanh(hedge_features)
 
         hedge_energy = jax.ops.segment_sum(
                            hedge_features,
                            segment_ids = hgraph.batch_hedge_index,
+                           num_segments = self.n_batch,
                            indices_are_sorted = True)
 
         total_energy = node_energy + hedge_energy

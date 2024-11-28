@@ -14,6 +14,10 @@ def loss_function(
 
     ground_truth = jnp.array(hgraph.targets[target_key])
 
-    loss = l2_loss(prediction, ground_truth).sum()
+    # indexing of [:-1] is to exclude influence of the last 
+    # empty hypergraph in the batch, which should not be taken
+    # into account
+
+    loss = l2_loss(prediction[:-1], ground_truth[:-1]).sum()
 
     return loss
