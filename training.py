@@ -1,8 +1,10 @@
 
 from typing import Callable, Tuple
+from functools import partial
 
 import equinox as eqx
 import jax
+import jax.numpy as jnp
 from jaxtyping import PyTree
 import optax
 from torch.utils.tensorboard import SummaryWriter
@@ -15,16 +17,21 @@ from hypergraph_model import HyperGraphConvolution
 # in principle we should do what is indicated here....
 # Wrap eveything -- computing gradients, running the optimiser, updating
 # the model -- into a single JIT region to ensure things run as fast as possible
-# @eqx.filter_jit
 # but we cant, because our model contains parts that are not jittable; in 
 # particular there are segment sums in the node and hedge convolutions and 
 # also in the gathering of the node and hedge energies
+
+# @partial(jax.jit, static_argnames=['num_segments'])
+# @eqx.filter_jit
+# @eqx.debug.assert_max_traces(max_traces=1)
 def train_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
         opt_state: PyTree,
         optimiser: optax.GradientTransformation,
-        batch: HyperGraph
+        node_features: jnp.array,
+        hedge_features: jnp.array,
+        indices: dict
     ) -> Tuple[HyperGraphConvolution, PyTree, float]:
 
     """Implement a single step of training"""
@@ -33,7 +40,11 @@ def train_step(
 
     # loss, grads = grad_fn(model, batch)
 
-    loss, grads = eqx.filter_value_and_grad(loss_fn)(model, batch)
+    loss, grads = eqx.filter_value_and_grad(loss_fn)(model,
+                       node_features,
+                       hedge_features,
+                       indices
+                  )
 
     updates, opt_state = jax.jit(optimiser.update)(
         grads, opt_state, eqx.filter(model, eqx.is_array)
@@ -42,17 +53,25 @@ def train_step(
     #     grads, opt_state, eqx.filter(model, eqx.is_array)
     #)
     
-    model = jax.jit(eqx.apply_updates)(model, updates)
+    # model = jax.jit(eqx.apply_updates)(model, updates)
+    model = eqx.apply_updates(model, updates)
 
     return model, opt_state, loss
 
+# @eqx.filter_jit
+# @eqx.debug.assert_max_traces(max_traces=1)
 def eval_step(
         model: HyperGraphConvolution,
         loss_fn: Callable,
-        batch: HyperGraph
+        node_features: jnp.array,
+        hedge_features: jnp.array,
+        indices: dict
     ) -> float:
 
-    loss = loss_fn(model, batch)
+    loss = loss_fn(model,
+                   batch.node_features,
+                   batch.hedge_features,
+                   batch.indices())
 
     return loss
 
@@ -89,12 +108,26 @@ def train_model(
 
        for batch in train_dl:
            model, opt_state, loss = train_step(
-                model, loss_func, opt_state, optimiser, batch
-           )
+                                                model,
+                                                loss_func,
+                                                opt_state,
+                                                optimiser,
+                                                batch.node_features,
+                                                batch.hedge_features,
+                                                batch.indices()
+                                              )
+
            train_running_loss += loss
 
        for batch in valid_dl:
-           loss = eval_step(model, loss_func, batch)
+           loss = eval_step(
+                             model,
+                             loss_func,
+                             batch.node_features,
+                             batch.hedge_features,
+                             batch.indices()
+                           )
+
            validation_running_loss += loss
 
        if epoch % n_print == 0:

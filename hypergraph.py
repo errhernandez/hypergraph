@@ -51,8 +51,8 @@ class HyperGraph:
         for key, value in kwargs.items():
             setattr( self, key, value)
 
-        self.n_hedges = int(max(incidence[0,:])) + 1
-        self.n_nodes = int(max(incidence[1,:])) + 1
+        self.n_hedges = jnp.array(int(max(incidence[0,:])) + 1)
+        self.n_nodes = jnp.array(int(max(incidence[1,:])) + 1)
 
         if hedge_features is not None:
             n_hedges, n_hedge_features = self.hedge_features.shape
@@ -61,7 +61,7 @@ class HyperGraph:
         else:
             n_hedge_features = 0
 
-        self.n_hedge_features = n_hedge_features
+        # self.n_hedge_features = n_hedge_features
 
         if node_features is not None:
             n_nodes, n_node_features = self.node_features.shape
@@ -70,7 +70,7 @@ class HyperGraph:
         else:
             n_node_features = 0
 
-        self.n_node_features = n_node_features
+        # self.n_node_features = n_node_features
 
         # calculate node and hedge order
 
@@ -178,8 +178,8 @@ class HyperGraph:
         # hypergraph_batch ensures proper indexing of these arrays; for individual
         # hypergraphs they are set to zero
 
-        self.batch_node_index = jnp.array(self.n_nodes * [0])
-        self.batch_hedge_index = jnp.array(self.n_hedges * [0])
+        self.batch_node_index = jnp.zeros(self.n_nodes, dtype=int)
+        self.batch_hedge_index = jnp.array(self.n_hedges, dtype=int)
 
     def indices(self) -> dict[str, jnp.ndarray]:
         """ Returns a dictionary with the hypergraph's data """
@@ -199,5 +199,10 @@ class HyperGraph:
         data['hedge2node_convolution'] = self.hedge2node_convolution
         data['hedge2node_receivers'] = self.hedge2node_receivers
         data['hedge2node_senders'] = self.hedge2node_senders
+
+        data['batch_node_index'] = self.batch_node_index
+        data['batch_hedge_index'] = self.batch_hedge_index
+
+        data['targets'] = self.targets
 
         return data 

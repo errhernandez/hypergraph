@@ -4,6 +4,7 @@ from typing import Optional
 import equinox as eqx
 import jax
 import jax.numpy as jnp
+from jax.ops import segment_sum
 
 from convolutions import HedgeConvolution, NodeConvolution
 from hypergraph import HyperGraph
@@ -180,11 +181,13 @@ class HyperGraphConvolution(eqx.Module):
         self.n_hedge_layers = len(self.hedge_layers)
 
     def __call__(self,
-          hgraph: HyperGraph
+          node_features: jnp.array,
+          hedge_features: jnp.array,
+          indices: dict
         ) -> tuple[jnp.array, jnp.array]:
 
-        node_features = hgraph.node_features
-        hedge_features = hgraph.hedge_features
+        # node_features = hgraph.node_features
+        # hedge_features = hgraph.hedge_features
 
         # first do the hypergraph convolution
 
@@ -192,7 +195,7 @@ class HyperGraphConvolution(eqx.Module):
 
             node_features, hedge_features = \
              layer(node_features, hedge_features, \
-             hgraph.indices())
+             indices)
 
         # then act with the MLPs
 
@@ -204,9 +207,11 @@ class HyperGraphConvolution(eqx.Module):
 
                node_features = jnp.tanh(node_features)
 
+        # @partial(jax.jit, static_argnums=2)
+        # node_energy = jax.jit(jax.ops.segment_sum, static_argnums=2)(
         node_energy = jax.ops.segment_sum(
                           node_features,
-                          segment_ids = hgraph.batch_node_index,
+                          segment_ids = indices['batch_node_index'],
                           num_segments = self.n_batch,
                           indices_are_sorted = True)
 
@@ -218,9 +223,11 @@ class HyperGraphConvolution(eqx.Module):
 
                hedge_features = jnp.tanh(hedge_features)
 
+        # @partial(jax.jit, static_argnums=2)
+        # hedge_energy = jax.jit(jax.ops.segment_sum, static_argnums=2)(
         hedge_energy = jax.ops.segment_sum(
                            hedge_features,
-                           segment_ids = hgraph.batch_hedge_index,
+                           segment_ids = indices['batch_hedge_index'],
                            num_segments = self.n_batch,
                            indices_are_sorted = True)
 

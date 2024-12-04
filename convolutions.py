@@ -4,6 +4,7 @@ from typing import Optional
 import equinox as eqx
 import jax
 import jax.numpy as jnp
+from jax.ops import segment_sum
 
 from hypergraph import HyperGraph
 
@@ -103,6 +104,11 @@ class NodeConvolution(eqx.Module):
 
         scaled_messages = node_convolution * messages
 
+        # @partial(jax.ops.segment_sum, static_argnums=2)
+        # gathered_messages = \
+        #  jax.jit(jax.ops.segment_sum, static_argnums=2)(scaled_messages,
+        #                              node_receivers,
+        #                              num_segments = self.n_max_nodes)
         gathered_messages = jax.ops.segment_sum(scaled_messages,
                                        node_receivers,
                                        num_segments = self.n_max_nodes)
@@ -116,6 +122,11 @@ class NodeConvolution(eqx.Module):
 
         scaled_hedge_messages = hedge2node_convolution * hedge_messages
 
+        # @partial(jax.ops.segment_sum, static_argnums=2)
+        # gathered_scaling = \
+        #    jax.jit(jax.ops.segment_sum, static_argnums=2)(scaled_hedge_messages,
+        #                                hedge2node_receivers,
+        #                                num_segments = self.n_max_nodes)
         gathered_scaling = jax.ops.segment_sum(scaled_hedge_messages,
                                        hedge2node_receivers,
                                        num_segments = self.n_max_nodes)
@@ -217,9 +228,14 @@ class HedgeConvolution(eqx.Module):
 
         scaled_messages = hedge_adjacency * messages
 
+        # @partial(jax.ops.segment_sum, static_argnums=2)
+        # gathered_messages = \
+        #    jax.jit(jax.ops.segment_sum, static_argnums=2)(scaled_messages,
+        #                                hedge_receivers,
+        #                                num_segments = self.n_max_hedges)
         gathered_messages = jax.ops.segment_sum(scaled_messages,
-                                       hedge_receivers,
-                                       num_segments = self.n_max_hedges)
+                                         hedge_receivers,
+                                         num_segments = self.n_max_hedges)
 
         # now use node embeddings to co-embed node embeddings
 
@@ -229,10 +245,15 @@ class HedgeConvolution(eqx.Module):
 
         scaled_node_messages = node2hedge_convolution * node_messages
 
+        # @partial(jax.ops.segment_sum, static_argnums=2)
+        # gathered_scaling = \
+        #   jax.jit(jax.ops.segment_sum, static_argnums=2)(scaled_node_messages,
+        #                                node2hedge_receivers,
+        #                                num_segments = self.n_max_hedges)
         gathered_scaling = jax.ops.segment_sum(scaled_node_messages,
-                                       node2hedge_receivers,
-                                       num_segments = self.n_max_hedges)
-
+                                         node2hedge_receivers,
+                                         num_segments = self.n_max_hedges)
+            
         output = jnp.tanh(gathered_scaling * gathered_messages)
 
         return output

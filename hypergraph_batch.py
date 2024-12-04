@@ -61,8 +61,8 @@ def hypergraph_batch(hypergraphs: list[HyperGraph]) -> HyperGraph:
 
     for n_graph, hgraph in enumerate(hypergraphs):
 
-        node_index += hgraph.n_nodes*[n_graph]
-        hedge_index += hgraph.n_hedges*[n_graph]
+        node_index += int(hgraph.n_nodes) * [n_graph]
+        hedge_index += int(hgraph.n_hedges) * [n_graph]
 
         hedges = np.asarray(hgraph.incidence[0,:]) + n_hedges
         b_hedges = np.concatenate((b_hedges, hedges))

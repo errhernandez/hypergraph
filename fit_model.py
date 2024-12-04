@@ -181,7 +181,10 @@ model = HyperGraphConvolution(
 
 hyperparams = {'conv_layers': convolution_layers,
                'node_layers': node_MLP,
-               'hedge_layers': hedge_MLP}
+               'hedge_layers': hedge_MLP,
+               'n_batch': train_batch_size,
+               'n_nodes_batch': n_nodes_batch, 
+               'n_hedges_batch': n_hedges_batch}
 
 # check if we are loading model parameters from a previous checkpoint
 

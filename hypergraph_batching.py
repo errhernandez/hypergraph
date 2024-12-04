@@ -223,8 +223,8 @@ class HyperGraphBatching:
                 batch_value.append(value)
                 targets[key] = batch_value
 
-            n_hedges += hgraph.n_hedges
-            n_nodes += hgraph.n_nodes
+            n_hedges += int(hgraph.n_hedges)
+            n_nodes += int(hgraph.n_nodes)
 
             if n_hedges > self.n_max_hedges:
                raise SmallParameter('n_hedges', n_hedges, self.n_max_hedges)
@@ -272,8 +272,8 @@ class HyperGraphBatching:
 
         # now add this empty hypergraph to the batch
  
-        node_index += empty_graph.n_nodes*[n_graph+1]
-        hedge_index += empty_graph.n_hedges*[n_graph+1]
+        node_index += int(empty_graph.n_nodes) * [n_graph+1]
+        hedge_index += int(empty_graph.n_hedges) * [n_graph+1]
 
         hedges = np.asarray(empty_graph.incidence[0,:]) + n_hedges
         b_hedges = np.concatenate((b_hedges, hedges))
@@ -331,8 +331,8 @@ class HyperGraphBatching:
 
         batch_hgraph = HyperGraph(incidence = None)
 
-        batch_hgraph.n_hedges = n_hedges
-        batch_hgraph.n_nodes = n_nodes
+        batch_hgraph.n_hedges = jnp.array(n_hedges)
+        batch_hgraph.n_nodes = jnp.array(n_nodes)
 
         batch_hgraph.batch_node_index = jnp.array(node_index)
         batch_hgraph.batch_hedge_index = jnp.array(hedge_index)
