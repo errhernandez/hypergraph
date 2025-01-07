@@ -72,10 +72,7 @@ hedge_layers = [{'n_hedge_in': 30},
 
 hyperparams = {'conv_layers': conv_layers,
                'node_layers': node_layers,
-               'hedge_layers': hedge_layers,
-               'n_batch': 1,
-               'n_nodes_batch': 30,
-               'n_hedges_batch': 150}
+               'hedge_layers': hedge_layers}
 model = builder(
             key = key,
             **hyperparams
@@ -86,16 +83,6 @@ print(model)
 energy = model(hgraph_sample)
 
 print(f'energy before = {energy}')
-
-# set hypergraph node and hedge features to zero to check 
-
-hgraph_sample.node_features *= 0.0
-hgraph_sample.hedge_features *= 0.0
-
-energy0 = model(hgraph_sample)
-print(f'energy of zero features = {energy0}')
-
-
 
 # now save the model parameters
 

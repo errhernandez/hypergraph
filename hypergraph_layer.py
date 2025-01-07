@@ -24,13 +24,8 @@ class HyperGraphLayer(eqx.Module):
     NodeConv: NodeConvolution
     HedgeConv: HedgeConvolution
 
-    # n_max_nodes: int
-    # n_max_hedges: int
-
     def __init__(self,
             key: jax.Array,
-            n_max_nodes: int,
-            n_max_hedges: int,
             n_node_in: int,
             n_hedge_in: int,
             n_node_out: Optional[int] = None,
@@ -50,9 +45,6 @@ class HyperGraphLayer(eqx.Module):
 
         key_nodes, key_hedges = jax.random.split(key)
 
-        # self.n_max_nodes = n_max_nodes
-        # self.n_max_hedges = n_max_hedges
-
         if n_node_out is None: n_node_out = n_node_in
         if n_hedge_out is None: n_hedge_out = n_hedge_in
 
@@ -66,7 +58,6 @@ class HyperGraphLayer(eqx.Module):
 
         self.NodeConv = NodeConvolution(
             key = key_nodes,
-            n_max_nodes = n_max_nodes,
             n_node_features_in = n_node_in,
             n_hedge_features = n_hedge_in,
             n_node_features_out = n_node_out
@@ -74,7 +65,6 @@ class HyperGraphLayer(eqx.Module):
 
         self.HedgeConv = HedgeConvolution(
             key = key_hedges,
-            n_max_hedges = n_max_hedges,
             n_hedge_features_in = n_hedge_in,
             n_node_features = n_node_out,
             n_hedge_features_out = n_hedge_out

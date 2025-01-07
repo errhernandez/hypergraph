@@ -19,11 +19,11 @@ log_message: 'Hello, HyperGraphs of the World, unite!'
 
 database: "../Databases/QM9ERHGraphDataBase/"
 
-n_training_max: 5000
+n_training_max: 150
 n_test_max: 1000
 train_validation_fraction: 0.3
-training_batch_size: 50
-validation_batch_size: 50
+training_batch_size: 10
+validation_batch_size: 10
 
 # In the following we define the hypergraph convolution model, which has three parts, namely:
 # 1) we start by giving a PRNGKey (an integer) for parameter initialisation
