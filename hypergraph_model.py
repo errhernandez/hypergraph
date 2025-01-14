@@ -154,7 +154,7 @@ class HyperGraphConvolution(eqx.Module):
 
     def __call__(self,
           hgraph: HyperGraph
-        ) -> tuple[jnp.array, jnp.array]:
+        ) -> jnp.array:
 
         node_features = hgraph.node_features
         hedge_features = hgraph.hedge_features
