@@ -153,19 +153,21 @@ class HyperGraphConvolution(eqx.Module):
         self.n_hedge_layers = len(self.hedge_layers)
 
     def __call__(self,
+          node_features: jnp.ndarray,
+          hedge_features: jnp.ndarray,
           hgraph: HyperGraph
         ) -> jnp.array:
 
-        node_features = hgraph.node_features
-        hedge_features = hgraph.hedge_features
+        # node_features = hgraph.node_features
+        # hedge_features = hgraph.hedge_features
 
         # first do the hypergraph convolution
 
         for layer in self.conv_layers:
 
             node_features, hedge_features = \
-             layer(node_features, hedge_features, \
-             hgraph.indices())
+               layer(node_features, hedge_features, \
+               hgraph.indices())
 
         # then act with the MLPs
 

@@ -22,6 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 import yaml
 
 from checkpointing import checkpoint_load, checkpoint_save
+from evaluate_model import evaluate_energy
 from hypergraph_batch import hypergraph_batch
 from hypergraph_model import HyperGraphConvolution 
 from hypergraph_dataset import HyperGraphDataSet
@@ -201,15 +202,30 @@ prd = []
 lss = []
 abslss = []
 
+derivative_nodes = jax.grad(evaluate_energy, argnums=2)
+derivative_hedges = jax.grad(evaluate_energy, argnums=3)
+
+params, static = eqx.partition(model, eqx.is_array)
+
 for n, batch in enumerate(test_dl):
 
-    prediction = model(batch)
+    prediction = model(batch.node_features, batch.hedge_features, batch)
     ground_truth = jnp.array(batch.targets['U0'])
     prediction = prediction[0,0]
     ground_truth = ground_truth[0,0]
     loss = jnp.sqrt((prediction - ground_truth)**2)
 
-    print(f'sample {n}, prediction: {prediction}, ref: {ground_truth}, mse: {loss}')
+    energy = evaluate_energy(
+               params,
+               static,
+               batch.node_features,
+               batch.hedge_features,
+               batch
+    )
+
+    print(f'sample {n}, prediction: {prediction}, energy: {energy}, ref: {ground_truth}, mse: {loss}')
+
+    grad_hedges = derivative_hedges(params, static, batch.node_features, batch.hedge_features, batch)
 
     ref.append(ground_truth)
     prd.append(prediction)
@@ -221,6 +237,7 @@ predicted = np.array(prd)
 difference = np.array(lss)
 sqrtloss = np.array(abslss)
 
+"""
 if writer is not None:
 
     e_max = np.max(reference)
@@ -239,3 +256,4 @@ if writer is not None:
     )
 
 writer.close()
+"""
