@@ -1,5 +1,6 @@
 
 from abc import ABC, abstractmethod
+from math import isnan
 import re
 
 import jax
@@ -158,7 +159,13 @@ class AtomicStructureHyperGraphs(ABC):
             for m, feature in enumerate(features):
 
                 command = "spec." + feature
-                values[m, n] = eval(command)
+                value = eval(command)
+                if value is None:
+                   value = 0.0 
+                values[m, n] = value
+                # above check is necessary because some features
+                # are not defined for all elements, 
+                # e.g. electron affinity for noble gases
 
         # now detect the maximum and minimum values for each feature
         # over the list of species we have
@@ -169,6 +176,8 @@ class AtomicStructureHyperGraphs(ABC):
         for m in range(n_features):
             features_max[m] = np.max(values[m, :])
             features_min[m] = np.min(values[m, :])
+            if features_max[m] - features_min[m] < 1.0e-5:
+               features_max[m] = 1.
 
         # normalise values
 

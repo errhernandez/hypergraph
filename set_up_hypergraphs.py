@@ -3,6 +3,7 @@ import re
 from typing import Union
 
 from atomic_structure_hypergraphs import AtomicStructureHyperGraphs
+from EFF_hypergraphs import EFFHyperGraphs
 from QM9_covalent_hypergraphs import QM9CovalentHyperGraphs
 
 def set_up_hypergraphs(
@@ -76,6 +77,33 @@ def set_up_hypergraphs(
                       r_max = r_max
 			    )
 
+    elif re.match('^eff', graph_type, flags=re.IGNORECASE):
+
+       if 'alpha' in kwargs.keys():
+          alpha = kwargs['alpha']
+       else:
+          alpha = 1.2
+
+       if 'r_min' in kwargs.keys():
+          r_min = kwargs['r_min']
+       else:
+          r_min = 0.5
+
+       if 'r_max' in kwargs.keys():
+          r_max = kwargs['r_max']
+       else:
+          r_max = 2.0
+
+       graphs = EFFHyperGraphs(
+                      species_list = species,
+                      node_feature_list = node_feature_list,
+                      n_hedge_features = n_hedge_features,
+                      pooling = pooling,
+                      alpha = alpha,
+                      r_min = r_min,
+                      r_max = r_max 
+                            )
+        
     else:  # we make this the default case
 
        if 'alpha' in kwargs.keys():
